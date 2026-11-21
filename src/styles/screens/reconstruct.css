@@ -224,7 +224,7 @@
   .rc-tb-desc { display: none; }
 }
 @media (max-width: 1200px) {
-  .rc-body { grid-template-columns: 272px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding: 10px; }
+  .rc-body { grid-template-columns: 278px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding: 10px; }
   .rc-flag-text { white-space: normal; }
   .rc-tb-date { display: none; }
   .rc-ct-sub { display: none; }

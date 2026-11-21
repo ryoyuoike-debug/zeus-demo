@@ -200,7 +200,7 @@ export default {
       function open() {
         if (!selected) return;
         // 別の症例を開くときは、その症例用に進捗をリセットする（リスト 2・3 の症例は 3D構成済み）
-        if (selected !== state.caseId) selectCase(selected, { reconstructed: true });
+        if (selected !== state.caseId) selectCase(selected, { reconstructed: true, position: session.positions.get(selected) ?? 'supine' });
         navigate(target);
       }
       async function remove() {
@@ -262,7 +262,7 @@ export default {
     function applyNext() {
       const n = nextSection();
       [sec1, lists.marker.el, lists.transfer.el].forEach((el, i) => el.classList.toggle('is-next', n === i + 1));
-      addBtn.classList.toggle('is-pulse', n === 1 && !ctx.tour);
+      addBtn.classList.toggle('is-pulse', n === 1 && !state.tourActive);
     }
 
     function initialSelect() {
@@ -293,6 +293,7 @@ export default {
     renderAll();
 
     const unsub = subscribe((_s, patch) => {
+      if ('tourActive' in patch) applyNext();
       if ('reconstructed' in patch || 'markersConfirmed' in patch || 'transferred' in patch || 'caseId' in patch) {
         if ('reconstructed' in patch && !state.reconstructed) { lists.marker.setNotice(''); }
         renderAll();

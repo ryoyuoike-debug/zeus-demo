@@ -9,9 +9,10 @@ import { CD_DRIVE_BIG, ctThumb } from './visuals.js';
 const abortErr = () => new DOMException('aborted', 'AbortError');
 
 /**
- * @param {{signal: AbortSignal, fast?: boolean, caseId?: string, onDone:(c:object)=>void}} o
+ * @param {{signal: AbortSignal, fast?: boolean | (() => boolean), caseId?: string, onDone:(c:object)=>void}} o
  */
 export function createCdImport({ signal, fast = false, caseId = 'DEMO-0001', onDone }) {
+  const isFast = () => (typeof fast === 'function' ? fast() : !!fast);
   const c = CASES.find((x) => x.id === caseId) || CASES[0];
   const totalImages = c.series.reduce((a, s) => a + s.images, 0);
   const totalFiles = totalImages + 1; // + DICOMDIR
@@ -75,7 +76,7 @@ export function createCdImport({ signal, fast = false, caseId = 'DEMO-0001', onD
       s1.set('busy', '確認中…');
       s2.set('wait', '待機中');
       s3.set('wait', '待機中');
-      await sleep(fast ? 700 : 1000, signal);
+      await sleep(isFast() ? 700 : 1000, signal);
       s1.set('done', '✓ DICOM データを検出');
       el.querySelector('.cd-pid').textContent = c.id;
       el.querySelector('.cd-date').textContent = studyDateTime(c);
@@ -84,7 +85,7 @@ export function createCdImport({ signal, fast = false, caseId = 'DEMO-0001', onD
       stageLabel.textContent = 'PC へコピーしています…';
       el.classList.add('is-copying');
       s2.set('busy', 'コピー中…');
-      await animate(fast ? 2200 : 3200, (u) => {
+      await animate(isFast() ? 2200 : 3200, (u) => {
         const p = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
         bar.style.width = `${(p * 100).toFixed(1)}%`;
         copyText.textContent = `${Math.round(p * totalFiles)} / ${totalFiles} ファイル`;
@@ -98,14 +99,14 @@ export function createCdImport({ signal, fast = false, caseId = 'DEMO-0001', onD
       stageLabel.textContent = 'シリーズを確認しています…';
       s3.set('busy', '確認中…');
       for (const [i, s] of c.series.entries()) {
-        await sleep(fast ? 280 : 420, signal);
+        await sleep(isFast() ? 280 : 420, signal);
         const win = s.desc.includes('肺野') ? 'lung' : 'mediastinum';
         slots[i].replaceWith(h('figure', { class: 'cd-thumb', style: { animationDelay: `${i * 40}ms` } },
           ctThumb(win, { size: 112 }),
           h('figcaption', {}, h('b', {}, win === 'lung' ? '肺野条件' : '縦隔条件'), h('span', { class: 'mono faint' }, `${s.images} 画像`)),
           h('span', { class: 'cd-thumb-ok' }, '✓')));
       }
-      await sleep(fast ? 250 : 400, signal);
+      await sleep(isFast() ? 250 : 400, signal);
       detected.classList.remove('is-pending');
       s3.set('done', '✓ 2 シリーズ');
       el.classList.remove('is-spinning');
@@ -113,7 +114,7 @@ export function createCdImport({ signal, fast = false, caseId = 'DEMO-0001', onD
       stageLabel.textContent = 'ディスクの読み込みが完了しました';
       st.done = true;
       st.phase = 'done';
-      await sleep(fast ? 900 : 1300, signal);
+      await sleep(isFast() ? 900 : 1300, signal);
       onDone?.(c);
     } catch (e) {
       if (e?.name !== 'AbortError') console.error(e);

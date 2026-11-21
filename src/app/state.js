@@ -57,12 +57,13 @@ export function resetDemo() {
  * 症例ごとの進捗（3D構成・マーカ・関心領域・ライン・転送・位置合わせ）は新しい症例用にリセットする。
  * 取込済み（imported）と体位はここでは変えない。
  * @param {string} id 症例 ID
- * @param {{reconstructed?: boolean, force?: boolean}} [o] reconstructed: 3D構成済みの症例か / force: 同じ症例でもリセットする（取り込み直し）
+ * @param {{reconstructed?: boolean, force?: boolean, position?: string}} [o] reconstructed: 3D構成済みの症例か / force: 同じ症例でもリセットする（取り込み直し）/ position: その症例の体位（指定したときだけ変える）
  */
-export function selectCase(id, { reconstructed = false, force = false } = {}) {
+export function selectCase(id, { reconstructed = false, force = false, position } = {}) {
   if (id === state.caseId && !force) return;
   setState({
     caseId: id,
+    ...(position ? { position } : {}),
     reconstructed,
     markersConfirmed: false,
     markerPositions: null,

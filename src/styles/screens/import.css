@@ -425,7 +425,9 @@ button.gw-winbtn:disabled { opacity: 0.35; cursor: not-allowed; }
   .imp-src-grid, .imp-facts, .cd-view, .imp-pos { grid-template-columns: 1fr; }
   .imp-sum-thumbs { grid-template-columns: repeat(2, minmax(0, 150px)); }
   .imp-pos-art svg { max-width: 240px; }
-  .gw-overlay { position: fixed; z-index: 80; padding: 8px; }
+  /* 注意書き（フッター）の上に収める。ツアー中は字幕バーの分も空ける */
+  .gw-overlay { position: fixed; z-index: 80; padding: 8px; bottom: var(--footer-real-h, 34px); }
+  body.is-touring .gw-overlay { padding-bottom: calc(var(--tour-bar-h, 64px) + 22px); }
   .gw-window { height: min(640px, 100%); }
   .gw-table { table-layout: auto; }
   .gw-table col { width: auto !important; }

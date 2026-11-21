@@ -32,8 +32,13 @@ export function makeTourHelpers({ signal, setCaption }) {
     }
     return target;
   };
+  /** 画面ごとのスクロール位置の好み（null なら既定: 狭い画面は中央、広い画面は最小限） */
+  let blockPref = null;
+  const defaultBlock = () => blockPref ?? (window.matchMedia('(max-width: 900px)').matches ? 'center' : 'nearest');
   const t = {
     signal,
+    /** pointAt / click / highlight で対象を画面内に入れるときの位置（'nearest' | 'center' | null=既定） */
+    setScrollBlock(block) { blockPref = block || null; },
     sleep,
     check,
     /** 字幕を表示 */
@@ -42,7 +47,7 @@ export function makeTourHelpers({ signal, setCaption }) {
     async pointAt(target, ms = 650, { block } = {}) {
       check();
       // 狭い画面（ページ全体がスクロール）では、対象を画面の中央に寄せる
-      block ??= window.matchMedia('(max-width: 900px)').matches ? 'center' : 'nearest';
+      block ??= defaultBlock();
       // 画面下の字幕バーに隠れないよう、スクロール側に scroll-padding を設定している（main.css）
       if (target instanceof Element) target.scrollIntoView?.({ block, inline: 'nearest' });
       const p = centerOf(target);
@@ -52,10 +57,10 @@ export function makeTourHelpers({ signal, setCaption }) {
       await sleep(ms + 50);
     },
     /** 要素をクリックする（カーソル移動 → クリック演出 → el.click()） */
-    async click(el, { move = true, ms = 650 } = {}) {
+    async click(el, { move = true, ms = 650, block } = {}) {
       check();
       if (!el) return;
-      if (move) await t.pointAt(el, ms);
+      if (move) await t.pointAt(el, ms, { block });
       cursor.classList.remove('is-click');
       void cursor.offsetWidth;
       cursor.classList.add('is-click');
@@ -67,6 +72,7 @@ export function makeTourHelpers({ signal, setCaption }) {
     async highlight(el, ms = 1200) {
       check();
       if (!el) return;
+      el.scrollIntoView?.({ block: defaultBlock(), inline: 'nearest' });
       el.classList.add('tour-highlight');
       try { await sleep(ms); } finally { el.classList.remove('tour-highlight'); }
     },

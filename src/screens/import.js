@@ -26,7 +26,8 @@ export default {
 
   mount(root, ctx) {
     const { signal } = ctx;
-    const fast = !!ctx.tour || !!state.tourActive;
+    // 待ち時間の短縮はツアー中だけ（途中でツアーを止めたら、その時点から通常の速さに戻す）
+    const fast = () => !!state.tourActive;
     let stage = 'source';
     let stageAbort = null;
     let gateway = null;
@@ -279,7 +280,7 @@ export default {
     }
     function next() {
       if (stage !== 'position') return;
-      setState({ imported: true, position });
+      session.positions.set(state.caseId, position); setState({ imported: true, position });
       navigate('reconstruct');
     }
 
@@ -343,7 +344,7 @@ export default {
         t.caption('［3D構成を開始］で、臓器の 3D モデルづくりに進みます。');
         await t.pointAt(nextBtn, 420);
         await t.highlight(nextBtn, 900);
-        setState({ imported: true, position });
+        session.positions.set(state.caseId, position); setState({ imported: true, position });
       },
     };
   },

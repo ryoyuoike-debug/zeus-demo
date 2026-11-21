@@ -13,9 +13,10 @@ const abortErr = () => new DOMException('aborted', 'AbortError');
 const seriesKind = (desc) => (desc.includes('肺野') ? 'lung' : 'med');
 
 /**
- * @param {{signal: AbortSignal, fast?: boolean, onDone:(c:object)=>void, onClose:()=>void}} o
+ * @param {{signal: AbortSignal, fast?: boolean | (() => boolean), onDone:(c:object)=>void, onClose:()=>void}} o
  */
 export function createGateway({ signal, fast = false, onDone, onClose }) {
+  const isFast = () => (typeof fast === 'function' ? fast() : !!fast);
   const st = { searching: false, results: null, selected: null, expanded: new Set(), retrieving: false, done: false };
 
   // ---- 検索欄 ----
@@ -179,7 +180,7 @@ export function createGateway({ signal, fast = false, onDone, onClose }) {
     st.searching = true; st.selected = null; st.expanded.clear();
     setStatus(`${DEMO_NETWORK.remote.ae} に問い合わせています…`, 'busy');
     render();
-    try { await sleep(fast ? 450 : 850, signal); } catch { return; }
+    try { await sleep(isFast() ? 450 : 850, signal); } catch { return; }
     const d = date ? date.replaceAll('-', '/') : null;
     st.results = CASES.filter((c) => (!id || c.id.toUpperCase() === id.toUpperCase()) && (!d || c.studyDate === d))
       .sort((a, b) => studyDateTime(b).localeCompare(studyDateTime(a)));
@@ -220,7 +221,7 @@ export function createGateway({ signal, fast = false, onDone, onClose }) {
     // 速く進む → 待ち（少々お待ちください。）→ 再び進む、という実機の雰囲気を短縮して再現
     const curve = (u) => (u < 0.34 ? (u / 0.34) * 0.42 : u < 0.64 ? 0.42 + ((u - 0.34) / 0.3) * 0.1 : 0.52 + ((u - 0.64) / 0.36) * 0.48);
     try {
-      await animate(fast ? 2000 : 4200, (u) => {
+      await animate(isFast() ? 2000 : 4200, (u) => {
         const p = curve(u);
         progBar.style.width = `${(p * 100).toFixed(1)}%`;
         progPct.textContent = `${Math.round(p * 100)}%`;
@@ -246,7 +247,7 @@ export function createGateway({ signal, fast = false, onDone, onClose }) {
     fetchBtn.replaceChildren(h('span', { class: 'check' }, '✓'), '取得完了');
     render();
     setStatus('取得が完了しました。Zeus に取り込みます…', 'ok');
-    try { await sleep(fast ? 450 : 900, signal); } catch { return; }
+    try { await sleep(isFast() ? 450 : 900, signal); } catch { return; }
     onDone?.(c);
   }
 

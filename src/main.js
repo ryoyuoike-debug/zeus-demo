@@ -230,6 +230,7 @@ async function startTour() {
       tourMeta.textContent = `${i + 1} / ${steps.length}　${s.label}`;
       tourProgress.style.width = `${(i / steps.length) * 100}%`;
       const cur = go(s.id, {}, { byTour: true });
+      t.setScrollBlock(null);
       await t.sleep(450);
       if (cur.instance?.tour) await cur.instance.tour(t);
       else await t.sleep(2500);
@@ -249,6 +250,7 @@ function stopTour() {
   const cur = tour;
   cur.abort.abort();
   endTour(cur);
+  closeAllDialogs(); // ツアーが開いたダイアログを残さない
 }
 function endTour(which = tour) {
   if (!which || tour !== which) return;

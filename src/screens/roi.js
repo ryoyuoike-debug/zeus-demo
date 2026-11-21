@@ -853,6 +853,7 @@ export default {
       await t.click(zoomBtn);
       await t.sleep(500);
       await t.click(sizeBtns[0]);
+      await t.pointAt(ct.canvas, 400); // 狭い画面では CT を画面内に戻してから塗る
       await t.drag(ct.canvas, loopPath(end[0], end[1], 7, 40, 1.15), { stepMs: 24 });
       await t.sleep(500);
 

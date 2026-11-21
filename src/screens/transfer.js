@@ -13,7 +13,7 @@ import { h } from '../ui/dom.js';
 import { state, setState, subscribe, navigate } from '../app/state.js';
 import { CASES, DEVICES, studyDateTime } from '../data/cases.js';
 import { STRUCTURES } from '../data/phantom.js';
-import { session as importSession } from './import/session.js';
+import { session as importSession, isListed } from './import/session.js';
 import { PC_SVG, DEVICE_SVG, ICONS } from './transfer/illustrations.js';
 import { createFlow } from './transfer/flow.js';
 
@@ -110,7 +110,8 @@ export default {
 
     const rows = () => {
       const removed = importSession?.removed?.transfer;
-      return CASES.filter((c) => c.id === state.caseId || !removed?.has(c.id)).sort(byNewest);
+      // メイン画面のリスト 3 と同じ症例（取り込んで 3D構成がまだの症例・削除した行は出さない）
+      return CASES.filter((c) => c.id === state.caseId || (isListed(c.id) && !removed?.has(c.id))).sort(byNewest);
     };
     let selectedId = memory.selected && rows().some((c) => c.id === memory.selected) ? memory.selected : state.caseId;
     const selectedCase = () => CASES.find((c) => c.id === selectedId) || CASES[0];
@@ -366,7 +367,7 @@ export default {
       sendBtn.classList.toggle('is-busy', busy);
       sendBtn.classList.toggle('btn-accent', !allDone || busy);
       sendBtn.classList.toggle('is-again', allDone && !busy);
-      sendBtn.classList.toggle('is-pulse', !busy && !scanning && conn.length > 0 && !allDone && !ctx.tour);
+      sendBtn.classList.toggle('is-pulse', !busy && !scanning && conn.length > 0 && !allDone && !state.tourActive);
       sendLabel.textContent = busy ? '転送中…' : allDone ? 'もう一度転送' : '転送';
       sendNote.classList.toggle('is-done', allDone && !busy);
       sendNote.textContent = busy
@@ -459,7 +460,10 @@ export default {
       busy = true;
       const caseId = selectedId;
       // 作業中の症例を切り替える（関心領域・ラインは roiCaseId で描いた症例を区別する。マーカの置き直し位置は前の症例のものなので破棄）
-      if (state.caseId !== caseId) setState({ caseId, markerPositions: null });
+      // マーカ確認は症例ごとなので、別の症例に切り替えたら未確認に戻す（体位はその症例の取込時のもの）
+      if (state.caseId !== caseId) {
+        setState({ caseId, markerPositions: null, markersConfirmed: false, position: importSession.positions.get(caseId) ?? 'supine' });
+      }
       const set = sentFor(caseId);
       for (const id of ids) { set.delete(id); dev[id].sending = true; dev[id].progress = 0; }
       renderRows();
@@ -499,7 +503,9 @@ export default {
     // 状態の変化（ほかの画面・リセット）に追従
     const unsub = subscribe((_s, patch) => {
       if (busy) return;
-      if ('roi' in patch || 'line' in patch || 'roiCaseId' in patch || 'transferred' in patch || 'caseId' in patch) render();
+      if ('roi' in patch || 'line' in patch || 'roiCaseId' in patch || 'transferred' in patch || 'caseId' in patch || 'tourActive' in patch) render();
+      // ツアーを途中で止めたら、まだ確認していない USB 接続を自動で確認する
+      if ('tourActive' in patch && !state.tourActive && memory.linked == null && !scanning && !signal.aborted) scan();
     });
 
     renderRows();

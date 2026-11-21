@@ -376,7 +376,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 /* ---------- ガイドツアー ---------- */
 .tour-bar {
   position: fixed; left: 50%; bottom: calc(var(--footer-real-h, var(--footer-h)) + 14px); transform: translateX(-50%);
-  z-index: 90; width: min(760px, calc(100% - 24px));
+  z-index: 110; width: min(760px, calc(100% - 24px));
   display: flex; align-items: center; gap: 14px;
   padding: 12px 14px 12px 18px;
   background: rgba(13, 22, 40, 0.94); border: 1px solid var(--border-strong); border-radius: 14px;
@@ -395,6 +395,8 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 @keyframes clickRing { from { transform: scale(0.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
 .tour-highlight { outline: 2px solid var(--orange) !important; outline-offset: 3px; border-radius: 8px; transition: outline-color 0.2s; }
 /* ツアー中: 字幕バー（--tour-bar-h）の分だけ下に余白を取り、PC 画面のアクションバーが隠れないようにする */
+/* ツアー中は、ツアーが開いたダイアログより上にヘッダー（ツアー停止ボタン）を出す */
+body.is-touring .app-header { position: relative; z-index: 105; }
 body.is-touring .screen-host { scroll-padding-bottom: calc(var(--tour-bar-h, 64px) + 24px); }
 body.is-touring .screen-host:has(> .pc-window) { padding-bottom: calc(var(--tour-bar-h, 64px) + 22px); }
 

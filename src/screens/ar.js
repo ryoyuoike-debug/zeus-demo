@@ -977,6 +977,8 @@ export default {
     // ガイドツアー（約 50 秒）
     // -------------------------------------------------------------------------
     async function tour(t) {
+      // 狭い画面ではメニューが AR 表示の下に並ぶので、スクロールは最小限にして AR 表示を見せる
+      t.setScrollBlock?.('nearest');
       while (!isReady) await t.sleep(100);
       resetScreen();
       await t.sleep(300);

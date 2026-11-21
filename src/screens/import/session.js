@@ -23,7 +23,14 @@ export const session = {
   newCases: new Map([[DEFAULT_NEW, false]]),
   /** メイン画面で一覧から削除した行（デモ上の擬似削除）: リスト番号 → Set<caseId> */
   removed: { marker: new Set(), transfer: new Set() },
+  /** 取り込んだ症例の体位: caseId → 'supine' | 'right' | 'left'（ここにない症例は仰臥位） */
+  positions: new Map(),
 };
+
+/** メイン画面のリスト（2・3）に載る症例か（取り込んで 3D構成がまだの症例は載せない） */
+export function isListed(id) {
+  return !session.newCases.has(id) || session.newCases.get(id) === true;
+}
 
 // resetDemo() はすべての進捗キーをまとめて setState するので、それを検知して初期化する
 const RESET_KEYS = ['imported', 'reconstructed', 'markersConfirmed', 'roi', 'line', 'transferred', 'registered'];
@@ -36,6 +43,7 @@ subscribe((s, patch) => {
     session.newCases.set(DEFAULT_NEW, false);
     session.removed.marker.clear();
     session.removed.transfer.clear();
+    session.positions.clear();
   }
   // 取り込んだ症例を作業中に 3D構成が終わった（またはやり直した）ら記録する。
   // 別の症例に切り替えても、取り込んだ症例の記録はそのまま残す。

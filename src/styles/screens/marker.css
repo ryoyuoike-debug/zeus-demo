@@ -140,7 +140,7 @@
 .mk-count { font-size: 10.5px; padding: 0 7px; }
 
 /* 高さが足りないときは、カードの列の中だけをスクロールする（アクションバーの下にはみ出さない） */
-.mk-cards { display: flex; flex-direction: column; gap: 7px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.mk-cards { display: flex; flex-direction: column; gap: 7px; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 3px; margin: -3px; }
 .mk-card {
   display: flex; flex-direction: column; gap: 0; padding: 0; min-width: 0;
   border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2);
