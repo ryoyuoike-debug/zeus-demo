@@ -39,8 +39,10 @@ export function makeTourHelpers({ signal, setCaption }) {
     /** 字幕を表示 */
     caption(text) { check(); setCaption(text); },
     /** 仮想カーソルを要素（または {x,y} のクライアント座標）へ動かす */
-    async pointAt(target, ms = 650, { block = 'nearest' } = {}) {
+    async pointAt(target, ms = 650, { block } = {}) {
       check();
+      // 狭い画面（ページ全体がスクロール）では、対象を画面の中央に寄せる
+      block ??= window.matchMedia('(max-width: 900px)').matches ? 'center' : 'nearest';
       // 画面下の字幕バーに隠れないよう、スクロール側に scroll-padding を設定している（main.css）
       if (target instanceof Element) target.scrollIntoView?.({ block, inline: 'nearest' });
       const p = centerOf(target);

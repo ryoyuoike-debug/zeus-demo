@@ -87,7 +87,7 @@
 .rc-stage-bar { flex: 1; min-width: 24px; height: 4px; }
 .rc-demo-note {
   display: flex; align-items: center; gap: 6px; margin-top: 9px; padding-top: 7px; border-top: 1px dashed var(--border);
-  font-size: 11px; color: #ffe066; white-space: nowrap; overflow: hidden;
+  font-size: 11px; color: #ffe066; white-space: normal;
 }
 
 /* ---- 左：抽出された構造 ---- */
@@ -224,7 +224,8 @@
   .rc-tb-desc { display: none; }
 }
 @media (max-width: 1200px) {
-  .rc-body { grid-template-columns: 258px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding: 10px; }
+  .rc-body { grid-template-columns: 272px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding: 10px; }
+  .rc-flag-text { white-space: normal; }
   .rc-tb-date { display: none; }
   .rc-ct-sub { display: none; }
   .rc-vp-hint { display: none; }

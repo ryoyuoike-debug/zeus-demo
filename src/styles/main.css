@@ -130,7 +130,8 @@ p { margin: 0; }
 .app-main { position: relative; overflow: hidden; min-height: 0; }
 .screen-host { position: absolute; inset: 0; overflow: auto; padding: 18px; }
 .screen-host.is-flush { padding: 0; }
-.screen-enter { animation: screenIn 0.35s ease both; }
+/* fill は backwards（終了後に transform を残すと、画面内の position:fixed がウィンドウ枠に閉じ込められる） */
+.screen-enter { animation: screenIn 0.35s ease backwards; }
 @keyframes screenIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 .app-footer {
@@ -412,6 +413,8 @@ body.is-touring .screen-host:has(> .pc-window) { padding-bottom: calc(var(--tour
   /* 注意書き（フッター）は常に画面内に表示する */
   .app-footer { position: sticky; bottom: 0; z-index: 85; }
   body.is-touring .app-main { padding-bottom: calc(var(--tour-bar-h, 64px) + 24px); }
+  /* 狭い画面ではページ全体がスクロールするので、ルートに scroll-padding を付けて字幕バーと注意書きの上に収める */
+  html:has(> body.is-touring) { scroll-padding-bottom: calc(var(--tour-bar-h, 64px) + var(--footer-real-h, 34px) + 24px); scroll-padding-top: 8px; }
 }
 @media (max-width: 560px) {
   .app-header { gap: 10px; padding: 0 12px; }
