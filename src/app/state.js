@@ -21,6 +21,8 @@ const initial = () => ({
   roi: [],
   /** 2 点ライン: {start:[x,y,z]|null, end:[x,y,z]|null} */
   line: { start: null, end: null },
+  /** 関心領域・2 点ラインを描いた症例の ID（roi / line を書き込むときに一緒に設定する。未設定なら null） */
+  roiCaseId: null,
   /** 端末への転送状況: { quest: 'done'|null, xreal: ..., ios: ... } */
   transferred: {},
   /** AR 表示: 位置合わせ済み */
@@ -49,6 +51,27 @@ export function subscribe(fn) {
 export function resetDemo() {
   const keep = { researchMode: state.researchMode };
   setState({ ...initial(), ...keep });
+}
+/**
+ * 作業中の症例を切り替える（新規データ追加で取り込んだとき、メイン画面で別の症例を開いたときなど）。
+ * 症例ごとの進捗（3D構成・マーカ・関心領域・ライン・転送・位置合わせ）は新しい症例用にリセットする。
+ * 取込済み（imported）と体位はここでは変えない。
+ * @param {string} id 症例 ID
+ * @param {{reconstructed?: boolean, force?: boolean}} [o] reconstructed: 3D構成済みの症例か / force: 同じ症例でもリセットする（取り込み直し）
+ */
+export function selectCase(id, { reconstructed = false, force = false } = {}) {
+  if (id === state.caseId && !force) return;
+  setState({
+    caseId: id,
+    reconstructed,
+    markersConfirmed: false,
+    markerPositions: null,
+    roi: [],
+    line: { start: null, end: null },
+    roiCaseId: null,
+    transferred: {},
+    registered: false,
+  });
 }
 export function currentCase() {
   return CASES.find((c) => c.id === state.caseId) || CASES[0];
