@@ -237,7 +237,7 @@ export function createPointCloud({ signal }) {
     s.mkCloud.g.visible = true;
     bars[0] = 1;
     t -= T.scan;
-    // 2) マーカー
+    // 2) マーカ
     if (t < T.marker) {
       const u = t / T.marker;
       bars[1] = u;

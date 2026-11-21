@@ -6,7 +6,7 @@ import '../styles/screens/summary.css';
 import { h, researchBadge } from '../ui/dom.js';
 import { state, subscribe, navigate, resetDemo } from '../app/state.js';
 import { DEVICES } from '../data/cases.js';
-import { FOUR_STEPS, STEP_HEADLINE, VALUES, iconSVG, valueTile } from './intro/content.js';
+import { FOUR_STEPS, STEP_HEADLINE, visibleValues, iconSVG, valueTile } from './intro/content.js';
 
 const anyTransferred = (s) => Object.values(s.transferred || {}).some(Boolean);
 
@@ -97,9 +97,12 @@ export default {
     });
 
     // ---------------------------------------------------------------- 特長・注記
+    const tilesGrid = h('div', { class: 'sum-tiles' });
+    const renderTiles = () => tilesGrid.replaceChildren(...visibleValues(state.researchMode).map(valueTile));
+    renderTiles();
     const values = h('section', { class: 'sum-card sum-values' },
       h('div', { class: 'sum-card-title' }, '特長', h('span', { class: 'sum-card-sub' }, '時間はいずれも目安です')),
-      h('div', { class: 'sum-tiles' }, VALUES.map(valueTile)));
+      tilesGrid);
     const notes = h('section', { class: 'sum-card sum-notes' },
       h('div', { class: 'sum-card-title' }, h('span', { class: 'sum-warn', 'aria-hidden': 'true' }, '⚠'), 'ご注意'),
       h('ul', { class: 'sum-note-list' },
@@ -169,6 +172,7 @@ export default {
     render();
     cleanups.push(subscribe((s, patch) => {
       if (['imported', 'reconstructed', 'markersConfirmed', 'roi', 'line', 'transferred', 'registered'].some((k) => k in patch)) render();
+      if ('researchMode' in patch) renderTiles();
     }));
     signal.addEventListener('abort', () => cleanups.splice(0).forEach((fn) => fn()), { once: true });
 

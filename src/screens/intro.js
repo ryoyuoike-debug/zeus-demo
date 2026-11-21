@@ -6,7 +6,7 @@ import '../styles/screens/intro.css';
 import { h, researchBadge } from '../ui/dom.js';
 import { state, subscribe, navigate } from '../app/state.js';
 import { LOGO_SVG } from '../ui/brand.js';
-import { FOUR_STEPS, STEP_HEADLINE, VALUES, iconSVG, valueCard } from './intro/content.js';
+import { FOUR_STEPS, STEP_HEADLINE, visibleValues, iconSVG, valueCard } from './intro/content.js';
 import { createHeroVisual } from './intro/heroVisual.js';
 import { createDiagram } from './intro/diagram.js';
 
@@ -107,9 +107,12 @@ export default {
             h('p', { class: 'intro-bg-foot' }, '基本機能は、手技の前に位置を確認するための使い方を想定しています。')))));
 
     // ---------------------------------------------------------------- 特長
+    const valuesGrid = h('div', { class: 'intro-values' });
+    const renderValues = () => valuesGrid.replaceChildren(...visibleValues(state.researchMode).map(valueCard));
+    renderValues();
     const values = h('section', { class: 'intro-section' },
       sectionHead('特長', '時間はいずれも目安です。研究開発中の機能には', researchBadge(), 'を付けています。'),
-      h('div', { class: 'intro-values' }, VALUES.map(valueCard)));
+      valuesGrid);
 
     // ---------------------------------------------------------------- 構成図
     const diagram = createDiagram();
@@ -192,7 +195,10 @@ export default {
       }
     };
     syncTourBtn();
-    cleanups.push(subscribe((s, patch) => { if ('tourActive' in patch) syncTourBtn(); }));
+    cleanups.push(subscribe((s, patch) => {
+      if ('tourActive' in patch) syncTourBtn();
+      if ('researchMode' in patch) renderValues();
+    }));
 
     const scroller = root.closest('.screen-host') || document.scrollingElement;
     const scrollToEl = (el, block = 'center') => {

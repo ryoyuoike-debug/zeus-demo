@@ -151,7 +151,10 @@ export const FOUR_STEPS = [
 ];
 export const STEP_HEADLINE = 'CTを撮る、マーカを確認する、範囲をなぞる、そして見る。';
 
-/** 価値訴求カード（仕様 1 章）。research: true は研究開発中・未承認の機能を含むもの。 */
+/**
+ * 価値訴求カード（仕様 1 章）。research: true は研究開発中・未承認の機能を含むもの。
+ * researchOnly: true は区分が確認できるまで研究開発機能として扱うもの（ヘッダーの「研究開発機能を表示」が ON のときだけ出す）。
+ */
 export const VALUES = [
   {
     id: '3d', icon: 'cube', title: '胸部CTから3Dモデルまで', metric: '約8分', unit: '目安',
@@ -184,10 +187,13 @@ export const VALUES = [
   {
     id: 'share', icon: 'share', title: '映像共有', metric: 'ミラーリング',
     desc: 'グラスの映像を手術室のモニターやiPadに映し、グラスを着けていない医師とも同じ映像を見られます。',
-    research: true,
+    research: true, researchOnly: true,
     short: '映像共有（ミラーリング）',
   },
 ];
+
+/** いま表示する価値訴求カード（研究開発機能が OFF のときは researchOnly を除く） */
+export const visibleValues = (researchMode) => VALUES.filter((v) => !v.researchOnly || researchMode);
 
 const MARKER_LEGEND = [
   { name: '右鎖骨中線', color: MK.right },
