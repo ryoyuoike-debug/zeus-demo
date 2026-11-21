@@ -92,7 +92,9 @@ export function dialog({ title, body, buttons = [{ label: 'OK', value: true, kin
       h('div', { class: 'dialog-title' }, title),
       h('div', { class: 'dialog-body' }, typeof body === 'string' ? h('p', {}, body) : body),
       h('div', { class: 'dialog-actions' }, buttons.map((b) => h('button', { class: `btn btn-${b.kind || 'ghost'}`, onclick: () => close(b.value) }, b.label))));
-    const overlay = h('div', { class: 'dialog-overlay', onclick: (e) => { if (e.target === overlay) close(null); } }, box);
+    // ダブルクリックの 2 回目で背景がクリックされて、すぐ閉じてしまわないようにする
+    const openedAt = performance.now();
+    const overlay = h('div', { class: 'dialog-overlay', onclick: (e) => { if (e.target === overlay && e.detail < 2 && performance.now() - openedAt > 300) close(null); } }, box);
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-open'));
     document.addEventListener('keydown', onKey);
@@ -113,6 +115,7 @@ export function toast(message, { kind = 'info', ms = 2600 } = {}) {
 /** 指定ミリ秒待つ（アニメーション用）。signal で中断可能。 */
 export function sleep(ms, signal) {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(new DOMException('aborted', 'AbortError')); return; }
     const t = setTimeout(resolve, ms);
     signal?.addEventListener('abort', () => { clearTimeout(t); reject(new DOMException('aborted', 'AbortError')); }, { once: true });
   });

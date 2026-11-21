@@ -266,7 +266,7 @@ export function createCtOverlay(get) {
         g.setLineDash([6, 4]);
         g.beginPath(); g.moveTo(ps.x, ps.y); g.lineTo(s.hover.x, s.hover.y); g.stroke();
         g.setLineDash([]);
-        pill(g, s.hover.x + 14, s.hover.y + 16, `${len.toFixed(1)} mm`, { border: 'rgba(62,224,255,0.6)' });
+        pill(g, s.hover.x + 14, s.hover.y + 16, `${len.toFixed(1)} mm（模擬値）`, { border: 'rgba(62,224,255,0.6)' });
       }
       const m = pointMarker(g, api, st, 'start', z, false);
       pill(g, m.c.x + 10, m.c.y - 16, m.label);

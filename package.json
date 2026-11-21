@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Thoracentes Zeus demo screen (synthetic data, for demonstration only)",
+  "description": "Thoracentes Zeus β (研究開発中 / research prototype) demo screen - synthetic data, for demonstration only",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

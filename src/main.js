@@ -69,13 +69,20 @@ function renderStepper() {
     }
     const btn = h('button', {
       class: 'step' + (s.id === currentId ? ' is-current' : '') + (isDone(s.id) ? ' is-done' : '') + (s.group === 'research' ? ' step-research' : ''),
-      onclick: () => { if (tour) stopTour(); go(s.id); },
+      onclick: () => go(s.id),
       'aria-current': s.id === currentId ? 'step' : null,
     }, s.num ? h('span', { class: 'step-num' }, isDone(s.id) ? '✓' : s.num) : null, s.label);
     groupEl.appendChild(btn);
   }
-  stepper.querySelector('.is-current')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  // 現在の画面のステップが見えるよう、ステッパーだけを横にスクロール（ページ全体は動かさない）
+  const cur = stepper.querySelector('.is-current');
+  if (cur && stepperScrolledFor !== currentId) {
+    stepperScrolledFor = currentId;
+    const sr = stepper.getBoundingClientRect(), cr = cur.getBoundingClientRect();
+    if (cr.left < sr.left || cr.right > sr.right) stepper.scrollLeft += cr.left - sr.left - (sr.width - cr.width) / 2;
+  }
 }
+let stepperScrolledFor = null;
 
 // ---------------------------------------------------------------------------
 // 画面の切り替え（ハッシュルーティング: #/roi など）
@@ -105,7 +112,9 @@ function frameFor(screen, body) {
   return body;
 }
 
-function go(id, params = {}, { fromHash = false } = {}) {
+function go(id, params = {}, { fromHash = false, byTour = false } = {}) {
+  // ツアー以外からの画面移動（画面内のボタン、メニュー、URL など）はツアーを止める
+  if (tour && !byTour) stopTour();
   const screen = SCREENS[id] ? SCREENS[id] : SCREENS.intro;
   if (screen.researchOnly && !state.researchMode) setState({ researchMode: true });
   // 前の画面で開いたダイアログを閉じてから、前の画面を破棄
@@ -135,6 +144,8 @@ function go(id, params = {}, { fromHash = false } = {}) {
   document.title = `${screen.title} — Thoracentes Zeus β デモ`;
   renderStepper();
   screenHost.scrollTop = 0;
+  // 狭い画面ではページ全体がスクロールするので、先頭に戻す
+  if (window.matchMedia('(max-width: 900px)').matches) window.scrollTo(0, 0);
   return current;
 }
 
@@ -159,7 +170,7 @@ async function onReset() {
     buttons: [{ label: 'キャンセル', value: false }, { label: 'リセット', value: true, kind: 'primary' }],
   });
   if (!ok) return;
-  if (tour) stopTour();
+  stopTour();
   resetDemo();
   go('intro');
 }
@@ -176,6 +187,11 @@ const tourBar = h('div', { class: 'tour-bar', role: 'status', 'aria-live': 'poli
   tourCaption, tourMeta,
   h('button', { class: 'btn btn-ghost btn-sm', onclick: () => stopTour() }, '■ 停止'),
   h('div', { class: 'tour-progress' }, tourProgress));
+
+// フッター（注意書き）の高さを CSS 変数に反映（狭い画面では折り返して高くなる）
+new ResizeObserver(() => {
+  document.documentElement.style.setProperty('--footer-real-h', `${Math.ceil(footer.offsetHeight)}px`);
+}).observe(footer);
 
 // 字幕バーの高さを CSS 変数に反映（PC 画面の下側の余白に使う）
 const tourBarRO = new ResizeObserver(() => {
@@ -196,7 +212,8 @@ updateTourButton();
 async function startTour() {
   if (tour) return;
   const abort = new AbortController();
-  tour = { abort };
+  const me = { abort };
+  tour = me;
   updateTourButton();
   setState({ tourActive: true });
   resetDemo();
@@ -212,7 +229,7 @@ async function startTour() {
       const s = steps[i];
       tourMeta.textContent = `${i + 1} / ${steps.length}　${s.label}`;
       tourProgress.style.width = `${(i / steps.length) * 100}%`;
-      const cur = go(s.id);
+      const cur = go(s.id, {}, { byTour: true });
       await t.sleep(450);
       if (cur.instance?.tour) await cur.instance.tour(t);
       else await t.sleep(2500);
@@ -223,13 +240,18 @@ async function startTour() {
   } catch (e) {
     if (e?.name !== 'AbortError') console.error(e);
   } finally {
-    endTour();
+    endTour(me);
   }
 }
+/** ツアーを止める（すぐに後片付けまで行い、次に表示する画面がツアー状態にならないようにする） */
 function stopTour() {
-  tour?.abort.abort();
+  if (!tour) return;
+  const cur = tour;
+  cur.abort.abort();
+  endTour(cur);
 }
-function endTour() {
+function endTour(which = tour) {
+  if (!which || tour !== which) return;
   tour = null;
   tourBarRO.disconnect();
   tourBar.remove();

@@ -78,16 +78,22 @@ export function makeTourHelpers({ signal, setCaption }) {
       await t.pointAt(points[0], 400);
       const fire = (type, p) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, clientX: p.x, clientY: p.y, pointerId: 77, pointerType: 'mouse', button, buttons: type === 'pointerup' ? 0 : 1, isPrimary: true }));
       fire('pointerdown', points[0]);
-      for (const p of points.slice(1)) {
-        check();
-        cursor.style.transitionDuration = '0ms';
-        cursor.style.left = `${p.x}px`;
-        cursor.style.top = `${p.y}px`;
-        fire('pointermove', p);
-        await sleep(stepMs);
+      let last = points[0];
+      try {
+        for (const p of points.slice(1)) {
+          check();
+          cursor.style.transitionDuration = '0ms';
+          cursor.style.left = `${p.x}px`;
+          cursor.style.top = `${p.y}px`;
+          fire('pointermove', p);
+          last = p;
+          await sleep(stepMs);
+        }
+      } finally {
+        // 途中でツアーを止めても、押したままにならないよう必ず離す
+        fire(signal.aborted ? 'pointercancel' : 'pointerup', last);
+        cursor.style.transitionDuration = '';
       }
-      fire('pointerup', points[points.length - 1]);
-      cursor.style.transitionDuration = '';
     },
     hideCursor() { cursor.style.opacity = '0'; },
     showCursor() { cursor.style.opacity = '1'; },

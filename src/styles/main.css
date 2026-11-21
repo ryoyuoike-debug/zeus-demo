@@ -366,7 +366,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .dialog-body { padding: 8px 18px 16px; color: var(--text-dim); font-size: 13.5px; }
 .dialog-body p + p { margin-top: 8px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; background: var(--surface); border-top: 1px solid var(--border); }
-.toast-host { position: fixed; left: 50%; bottom: calc(var(--footer-h) + 18px); transform: translateX(-50%); z-index: 120; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.toast-host { position: fixed; left: 50%; bottom: calc(var(--footer-real-h, var(--footer-h)) + 18px); transform: translateX(-50%); z-index: 120; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
 .toast { padding: 10px 16px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--border-strong); box-shadow: var(--shadow); font-size: 13px; opacity: 0; transform: translateY(8px); transition: opacity 0.2s, transform 0.2s; }
 .toast.is-in { opacity: 1; transform: none; }
 .toast-success { border-color: rgba(34, 197, 94, 0.6); }
@@ -374,7 +374,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 
 /* ---------- ガイドツアー ---------- */
 .tour-bar {
-  position: fixed; left: 50%; bottom: calc(var(--footer-h) + 14px); transform: translateX(-50%);
+  position: fixed; left: 50%; bottom: calc(var(--footer-real-h, var(--footer-h)) + 14px); transform: translateX(-50%);
   z-index: 90; width: min(760px, calc(100% - 24px));
   display: flex; align-items: center; gap: 14px;
   padding: 12px 14px 12px 18px;
@@ -409,12 +409,14 @@ body.is-touring .screen-host:has(> .pc-window) { padding-bottom: calc(var(--tour
   .header-actions .hide-sm { display: none; }
   .pc-window, .hmd-frame { min-height: 0; height: auto; }
   .pc-menu { display: none; }
+  /* 注意書き（フッター）は常に画面内に表示する */
+  .app-footer { position: sticky; bottom: 0; z-index: 85; }
   body.is-touring .app-main { padding-bottom: calc(var(--tour-bar-h, 64px) + 24px); }
 }
 @media (max-width: 560px) {
   .app-header { gap: 10px; padding: 0 12px; }
   .brand { gap: 8px; }
-  .brand .badge { display: none; }
+  .brand .badge { height: 18px; padding: 0 6px; font-size: 10px; flex: none; }
   .brand-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; }
   .header-actions .lbl-long { display: none; }
   .header-actions .lbl-short { display: inline; }

@@ -1,8 +1,8 @@
 // =============================================================================
-// 研究段階（構想）: 点群とARマーカーによる位置合わせ
+// 研究段階（構想）: 点群とARマーカによる位置合わせ
 // -----------------------------------------------------------------------------
 // iPad・iPhone の LiDAR で取得した体表の点群（ここでは体表メッシュから合成）を、
-// ARマーカーを共通の目印にして 3D モデルへ重ね合わせる流れをアニメーションで示します。
+// ARマーカを共通の目印にして 3D モデルへ重ね合わせる流れをアニメーションで示します。
 // 表示はイメージです（精度や計測値は表示しません）。
 // =============================================================================
 import * as THREE from 'three';
@@ -22,7 +22,7 @@ const ITER = 6;
 
 const STEPS = [
   { title: '体表の点群を取得', text: 'iPad・iPhone の LiDAR で、体表の形を点群として取得します。', icon: 'lidar' },
-  { title: 'ARマーカーを共通の目印に', text: '体表に置いたARマーカーを、点群と3Dモデルの共通の目印にします。', icon: 'marker' },
+  { title: 'ARマーカを共通の目印に', text: '体表に置いたARマーカを、点群と3Dモデルの共通の目印にします。', icon: 'marker' },
   { title: 'PCで位置と向きを計算', text: '点群と3Dモデルを重ね合わせ、モデルの位置と向きを求めます。', icon: 'pc' },
   { title: 'Questに反映', text: '計算した結果を、ARグラスの表示に反映します。', icon: 'hmd' },
 ];
@@ -33,7 +33,7 @@ const ICONS = {
   hmd: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 12 q0 -4 4 -4 h16 q4 0 4 4 v6 q0 4 -4 4 h-4 l-2 -3 h-4 l-2 3 h-4 q-4 0 -4 -4 z"/><circle cx="11" cy="15" r="2.5" class="i-accent"/><circle cx="21" cy="15" r="2.5" class="i-accent"/></svg>',
 };
 
-/** ARマーカー風のテクスチャ（汎用の白黒パターン） */
+/** ARマーカ風のテクスチャ（汎用の白黒パターン） */
 function markerTexture() {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
@@ -66,7 +66,7 @@ export function createPointCloud({ signal }) {
     h('div', { class: 'rs-pc-legend' },
       h('span', {}, h('i', { class: 'is-cloud' }), '体表の点群（合成）'),
       h('span', {}, h('i', { class: 'is-model' }), '3Dモデル'),
-      h('span', {}, h('i', { class: 'is-marker' }), 'ARマーカー')),
+      h('span', {}, h('i', { class: 'is-marker' }), 'ARマーカ')),
     loading);
   const stepEls = STEPS.map((s, i) => h('li', { class: 'rs-pc-step' },
     h('span', { class: 'rs-pc-icon', html: ICONS[s.icon] }),
@@ -76,8 +76,8 @@ export function createPointCloud({ signal }) {
   const el = h('section', { class: 'rs-sec rs-pc' },
     h('div', { class: 'rs-pc-main' },
       h('div', { class: 'rs-sec-head' },
-        h('div', { class: 'rs-sec-title' }, '点群とARマーカーによる位置合わせ', conceptBadge()),
-        h('p', { class: 'rs-sec-lead' }, '体表の点群とARマーカーを手がかりに、3Dモデルの位置と向きを求める研究です。')),
+        h('div', { class: 'rs-sec-title' }, '点群とARマーカによる位置合わせ', conceptBadge()),
+        h('p', { class: 'rs-sec-lead' }, '体表の点群とARマーカを手がかりに、3Dモデルの位置と向きを求める研究です。')),
       stage),
     h('aside', { class: 'rs-pc-side' },
       h('ol', { class: 'rs-pc-steps' }, stepEls),
@@ -148,7 +148,7 @@ export function createPointCloud({ signal }) {
     scan.scale.set(165, 122, 1);
     cloudGroup.add(scan);
 
-    // ARマーカー（モデル側と点群側）
+    // ARマーカ（モデル側と点群側）
     const tex = markerTexture();
     textures.push(tex);
     const mY = anteriorSkinY(MARKER_AT[0], MARKER_AT[2]);
@@ -247,7 +247,7 @@ export function createPointCloud({ signal }) {
       s.mkCloud.g.scale.setScalar(1 + 0.12 * pulse);
       s.mkModel.g.scale.setScalar(1 + 0.12 * pulse);
       updateLink(Math.min(1, u * 2));
-      setPhase(1, '② ARマーカーを共通の目印として検出');
+      setPhase(1, '② ARマーカを共通の目印として検出');
       updateBars(bars);
       return;
     }
