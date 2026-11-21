@@ -112,6 +112,12 @@ export function createViewer(container, opts = {}) {
       const to = new THREE.Vector3(...pos);
       const t0 = controls ? controls.target.clone() : target.clone();
       const t1 = tgt ? new THREE.Vector3(...tgt) : t0.clone();
+      if (!(ms > 0)) {
+        // 時間 0 のときはすぐに移動（0 で割らない）
+        camera.position.copy(to);
+        if (controls) controls.target.copy(t1); else camera.lookAt(t1);
+        return;
+      }
       const start = performance.now();
       const off = this.onFrame(() => {
         const u = Math.min(1, (performance.now() - start) / ms);
@@ -141,14 +147,22 @@ export function createViewer(container, opts = {}) {
       frameCallbacks.clear();
       controls?.dispose();
       timer.dispose?.();
+      const disposeMaterial = (m) => {
+        if (!m) return;
+        // マテリアルが持つテクスチャ（map など）も破棄する
+        for (const v of Object.values(m)) if (v && v.isTexture) v.dispose();
+        m.dispose?.();
+      };
       scene.traverse((o) => {
         // 共有ジオメトリ（解剖モデル）は破棄しない。userData.ownGeometry のものだけ破棄。
-        if (o.isMesh || o.isLine || o.isPoints) {
+        if (o.isMesh || o.isLine || o.isPoints || o.isSprite) {
           if (o.userData.ownGeometry) o.geometry?.dispose();
           const m = o.material;
-          if (Array.isArray(m)) m.forEach((x) => x.dispose()); else m?.dispose?.();
+          if (Array.isArray(m)) m.forEach(disposeMaterial); else disposeMaterial(m);
         }
       });
+      if (scene.background?.isTexture) scene.background.dispose();
+      if (scene.environment?.isTexture) scene.environment.dispose();
       renderer.dispose();
       renderer.forceContextLoss?.();
       renderer.domElement.remove();

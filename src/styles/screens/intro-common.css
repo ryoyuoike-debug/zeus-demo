@@ -1,0 +1,8 @@
+/* =============================================================================
+   「はじめに」「まとめ」共通: インライン SVG アイコン
+   ============================================================================= */
+.ico { display: block; flex: none; overflow: visible; }
+.ico .ico-fill { fill: currentColor; stroke: none; }
+.ico .ico-accent { stroke: var(--ico-accent, currentColor); }
+.ico .ico-cut { fill: var(--ico-bg, #0c1424); }
+.ico .ico-dot { transition: transform 0.3s ease; transform-box: fill-box; transform-origin: center; }

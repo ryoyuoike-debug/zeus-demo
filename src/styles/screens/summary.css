@@ -1,0 +1,176 @@
+/* =============================================================================
+   S9 まとめ
+   ============================================================================= */
+.screen-summary { height: auto !important; }
+.sum {
+  max-width: 1240px; margin: 0 auto; padding: 4px 4px 28px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+@keyframes sumRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ---------- 見出し ---------- */
+.sum-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 4px 0 0;
+  animation: sumRise 0.6s cubic-bezier(.2, .7, .2, 1) both;
+}
+.sum-head-copy { min-width: 0; }
+.sum-kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.16em; color: #7fb6ff;
+}
+.sum-kicker::before { content: ""; width: 18px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--blue), #3be0ff); }
+.sum-title {
+  margin-top: 6px;
+  font-size: clamp(20px, 1.95vw, 28px); font-weight: 800; letter-spacing: 0.02em; line-height: 1.3;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.sum-lead { margin-top: 6px; color: var(--text-dim); font-size: 14px; max-width: 62em; }
+
+.sum-progress {
+  flex: none; display: flex; align-items: center; gap: 14px;
+  padding: 12px 18px 12px 12px; border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+}
+.sum-progress.is-complete { border-color: rgba(34, 197, 94, 0.45); box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.12), 0 10px 30px rgba(34, 197, 94, 0.1); }
+.sum-ring { position: relative; width: 84px; height: 84px; flex: none; }
+.sum-ring svg { display: block; }
+.sum-ring-bg { fill: none; stroke: var(--surface-4); stroke-width: 7; }
+.sum-ring-fg { fill: none; stroke: var(--blue); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.3, .7, .2, 1) 0.3s, stroke 0.3s; }
+.sum-progress.is-complete .sum-ring-fg { stroke: var(--green); }
+.sum-ring-num { position: absolute; inset: 0; display: grid; place-items: center; grid-auto-flow: column; align-content: center; justify-content: center; gap: 1px; }
+.sum-ring-num b { font-size: 26px; font-weight: 800; line-height: 1; }
+.sum-ring-num span { font-size: 13px; color: var(--text-dim); align-self: end; padding-bottom: 2px; }
+.sum-progress-label { font-size: 12px; font-weight: 700; color: var(--text-dim); }
+.sum-progress-text { font-size: 13.5px; font-weight: 600; margin-top: 2px; white-space: nowrap; }
+.sum.is-touring { padding-bottom: 120px; }
+
+/* ---------- 4 ステップ ---------- */
+.sum-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.sum-step {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px; border-radius: 16px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  animation: sumRise 0.6s cubic-bezier(.2, .7, .2, 1) both;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.sum-step::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px;
+  background: var(--surface-4);
+}
+.sum-step.is-partial::before { background: linear-gradient(90deg, var(--blue) 50%, var(--surface-4) 50%); }
+.sum-step.is-done { border-color: rgba(34, 197, 94, 0.4); }
+.sum-step.is-done::before { background: linear-gradient(90deg, var(--green), #6ee7a0); }
+.sum-step-top { display: flex; align-items: center; gap: 12px; }
+.sum-step-icon {
+  flex: none; width: 50px; height: 50px; border-radius: 13px; display: grid; place-items: center;
+  background: var(--blue-soft); border: 1px solid rgba(47, 139, 255, 0.35); color: #9cc7ff;
+  --ico-bg: #0f1d36; --ico-accent: var(--orange);
+}
+.sum-step.is-done .sum-step-icon { background: var(--blue); border-color: var(--blue); color: #fff; --ico-bg: var(--blue); box-shadow: 0 0 18px rgba(47, 139, 255, 0.4); }
+.sum-step-head { min-width: 0; flex: 1; }
+.sum-step-num { font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em; color: var(--text-faint); }
+.sum-step-title { font-size: 16px; font-weight: 800; }
+.sum-step-check {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 2px dashed var(--border-strong); color: transparent;
+}
+.sum-step-check svg { width: 16px; height: 16px; }
+.sum-step-check svg path { stroke-dasharray: 24; stroke-dashoffset: 24; }
+.sum-step.is-done .sum-step-check {
+  border: 0; background: var(--green); color: #04210f;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
+  animation: sumPop 0.45s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: var(--check-delay, 0s);
+}
+.sum-step.is-done .sum-step-check svg path { animation: sumDraw 0.4s ease forwards; animation-delay: calc(var(--check-delay, 0s) + 0.15s); }
+@keyframes sumPop { from { transform: scale(0.3); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sumDraw { to { stroke-dashoffset: 0; } }
+.sum-subs { list-style: none; margin: 2px 0 0; padding: 10px 0 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+.sum-subs li { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--text-faint); line-height: 1.5; }
+.sum-subs li.is-done { color: var(--text); }
+.sum-subs small { font-size: 11px; color: var(--text-dim); margin-left: 2px; }
+.sum-sub-mark {
+  flex: none; width: 16px; height: 16px; margin-top: 1.5px; border-radius: 50%;
+  border: 1.5px solid var(--border-strong); display: grid; place-items: center;
+}
+.sum-subs li.is-done .sum-sub-mark { border: 0; background: var(--green-soft); color: var(--green); }
+.sum-sub-mark svg { width: 11px; height: 11px; }
+.sum-step-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 4px; }
+.sum-status { font-size: 11.5px; font-weight: 700; color: var(--text-faint); }
+.sum-status.is-done { color: var(--green); }
+.sum-status.is-partial { color: #7fb6ff; }
+.sum-go span { transition: transform 0.2s; }
+.sum-go:hover span { transform: translateX(2px); }
+
+/* ---------- 特長・注記 ---------- */
+.sum-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; animation: sumRise 0.6s 0.25s cubic-bezier(.2, .7, .2, 1) both; }
+.sum-card {
+  padding: 16px; border-radius: 16px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+}
+.sum-card-title { display: flex; align-items: baseline; gap: 10px; font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+.sum-card-sub { font-size: 12px; font-weight: 500; color: var(--text-dim); }
+.sum-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.vtile {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 9px 12px; border-radius: 12px;
+  background: rgba(6, 12, 24, 0.45); border: 1px solid var(--border);
+  font-size: 13px; font-weight: 700;
+}
+.vtile-icon {
+  flex: none; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+  background: var(--blue-soft); color: #9cc7ff; --ico-bg: #0f1d36;
+}
+.vtile.is-research .vtile-icon { background: var(--research-soft); color: #ff9cc6; --ico-bg: #1d1024; }
+.vtile-text { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 4px 8px; flex-wrap: wrap; }
+.vtile-text small { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+.vtile .badge { flex: none; height: 18px; font-size: 10.5px; padding: 0 7px; }
+
+.sum-notes { border-color: rgba(225, 29, 116, 0.35); background: linear-gradient(180deg, rgba(225, 29, 116, 0.07), rgba(12, 20, 36, 0.9)); }
+.sum-warn { color: var(--research); }
+.sum-note-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.sum-note-list li { position: relative; padding-left: 14px; font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.sum-note-list li::before { content: ""; position: absolute; left: 2px; top: 0.68em; width: 5px; height: 5px; border-radius: 50%; background: var(--research); }
+.sum-note-list .badge { margin-left: 6px; }
+
+/* ---------- お問い合わせ ---------- */
+.sum-cta {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+  padding: 22px 24px; border-radius: 18px;
+  background: linear-gradient(120deg, rgba(29, 64, 122, 0.6), rgba(12, 20, 36, 0.95) 62%), var(--surface);
+  border: 1px solid rgba(47, 139, 255, 0.4);
+  animation: sumRise 0.6s 0.35s cubic-bezier(.2, .7, .2, 1) both;
+}
+.sum-cta-glow {
+  position: absolute; right: -120px; top: -140px; width: 420px; height: 420px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 138, 31, 0.16), rgba(255, 138, 31, 0) 65%);
+  pointer-events: none;
+}
+.sum-cta-copy { position: relative; min-width: 0; }
+.sum-cta-title { font-size: clamp(18px, 1.8vw, 24px); font-weight: 800; letter-spacing: 0.02em; }
+.sum-cta p { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+.sum-cta-actions { position: relative; display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- レスポンシブ ---------- */
+@media (max-height: 760px) and (min-width: 901px) {
+  .sum { gap: 12px; }
+  .sum-step { padding: 13px; gap: 8px; }
+  .sum-card { padding: 13px; }
+  .sum-cta { padding: 16px 20px; }
+}
+@media (max-width: 1180px) {
+  .sum-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sum-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .sum-head { flex-direction: column; align-items: flex-start; }
+  .sum-progress-text { white-space: normal; }
+  .sum-steps { grid-template-columns: 1fr; }
+  .sum-tiles { grid-template-columns: 1fr; }
+}

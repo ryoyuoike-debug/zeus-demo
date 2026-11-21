@@ -39,9 +39,10 @@ export function makeTourHelpers({ signal, setCaption }) {
     /** 字幕を表示 */
     caption(text) { check(); setCaption(text); },
     /** 仮想カーソルを要素（または {x,y} のクライアント座標）へ動かす */
-    async pointAt(target, ms = 650) {
+    async pointAt(target, ms = 650, { block = 'nearest' } = {}) {
       check();
-      if (target instanceof Element) target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+      // 画面下の字幕バーに隠れないよう、スクロール側に scroll-padding を設定している（main.css）
+      if (target instanceof Element) target.scrollIntoView?.({ block, inline: 'nearest' });
       const p = centerOf(target);
       cursor.style.transitionDuration = `${ms}ms`;
       cursor.style.left = `${p.x}px`;
@@ -49,10 +50,10 @@ export function makeTourHelpers({ signal, setCaption }) {
       await sleep(ms + 50);
     },
     /** 要素をクリックする（カーソル移動 → クリック演出 → el.click()） */
-    async click(el, { move = true } = {}) {
+    async click(el, { move = true, ms = 650 } = {}) {
       check();
       if (!el) return;
-      if (move) await t.pointAt(el);
+      if (move) await t.pointAt(el, ms);
       cursor.classList.remove('is-click');
       void cursor.offsetWidth;
       cursor.classList.add('is-click');

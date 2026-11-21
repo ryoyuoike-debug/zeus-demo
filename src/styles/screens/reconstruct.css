@@ -1,0 +1,245 @@
+/* =============================================================================
+   3D構成（進捗パネル / 3D ビュー / 2D CT ビューア）
+   ============================================================================= */
+.rc { position: relative; }
+.rc .rc-ico { display: inline-grid; place-items: center; line-height: 0; flex: none; }
+
+/* ---- ツールバー ---- */
+.rc-toolbar { gap: 14px; padding: 8px 12px 8px 14px; flex-wrap: nowrap; min-height: 46px; }
+.rc-tb-title { font-size: 14px; white-space: nowrap; }
+.rc-tb-meta {
+  display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden;
+  font-size: 12.5px; color: var(--text-dim); white-space: nowrap;
+}
+.rc-tb-id {
+  color: var(--text); font-weight: 700; font-size: 12px;
+  padding: 1px 7px; border-radius: 5px; background: var(--surface-3); border: 1px solid var(--border-strong);
+}
+.rc-tb-name { color: var(--text); }
+.rc-tb-item::before {
+  content: ""; display: inline-block; width: 1px; height: 12px; margin-right: 10px;
+  background: var(--border-strong); vertical-align: -1px;
+}
+.rc-tb-pos { padding: 0 8px; height: 20px; line-height: 18px; border-radius: 10px; border: 1px solid var(--border-strong); font-size: 11.5px; }
+.rc-tb-spacer { flex: 1; min-width: 0; }
+.rc-status {
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 13px;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+  background: var(--blue-soft); color: #8cc2ff; border: 1px solid rgba(47, 139, 255, 0.45);
+}
+.rc-status .spinner { width: 12px; height: 12px; border-width: 2px; border-top-color: #8cc2ff; }
+.rc-status.is-done { background: var(--green-soft); color: var(--green); border-color: rgba(34, 197, 94, 0.45); }
+.rc-close { gap: 6px; }
+
+/* ---- 本体（3 カラム） ---- */
+.rc-body {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: 288px minmax(0, 1.1fr) minmax(0, 1fr); gap: 12px;
+  padding: 12px;
+  background:
+    radial-gradient(900px 360px at 55% -12%, rgba(47, 139, 255, 0.07), transparent 70%),
+    var(--surface);
+}
+
+/* ---- 左：進捗 ---- */
+.rc-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.rc-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+.rc-sec-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.rc-sec-head > :first-child { margin-right: auto; }
+.rc-sec-title { font-size: 12.5px; font-weight: 700; color: var(--text-dim); letter-spacing: 0.04em; white-space: nowrap; }
+.rc-total-pct { font-size: 21px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -0.02em; min-width: 3.1em; text-align: right; }
+.rc-remain { font-size: 11.5px; color: #8cc2ff; white-space: nowrap; }
+.rc-total-bar { height: 7px; }
+.rc-total-bar > span, .rc-stage-bar > span { transition: none; } /* 毎フレーム更新するのでアニメーション不要 */
+.rc-eta { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 11.5px; color: var(--text-dim); white-space: nowrap; }
+
+.rc-stages { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.rc-stage { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; }
+.rc-stage::before {
+  /* 段階をつなぐ縦線 */
+  content: ""; position: absolute; left: 10px; top: 24px; bottom: -7px; width: 2px; border-radius: 1px; background: var(--border);
+}
+.rc-stage:last-child::before { display: none; }
+.rc-stage.is-done::before { background: rgba(34, 197, 94, 0.45); }
+.rc-stage-icon {
+  position: relative; z-index: 1;
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 11px; font-weight: 800; color: var(--text-faint);
+  border: 1.5px solid var(--border-strong); background: var(--surface);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.rc-stage.is-active .rc-stage-icon { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 0 0 3px var(--blue-soft); }
+.rc-stage.is-active .rc-stage-icon::after {
+  content: ""; position: absolute; inset: -5px; border-radius: 50%;
+  border: 2px solid transparent; border-top-color: #7fbaff; border-right-color: rgba(127, 186, 255, 0.35);
+  animation: spin 0.9s linear infinite;
+}
+.rc-stage.is-done .rc-stage-icon { background: var(--green); border-color: var(--green); color: #04210f; animation: rcPop 0.35s ease-out; }
+.rc-stage-main { min-width: 0; }
+.rc-stage-head { display: flex; align-items: center; gap: 9px; height: 22px; }
+.rc-stage-label { font-size: 13px; font-weight: 700; color: var(--text-dim); white-space: nowrap; }
+.rc-stage.is-active .rc-stage-label, .rc-stage.is-done .rc-stage-label { color: var(--text); }
+.rc-stage-pct { flex: none; min-width: 30px; text-align: right; font-size: 11.5px; color: var(--text-dim); white-space: nowrap; }
+.rc-stage.is-active .rc-stage-pct { color: #8cc2ff; }
+.rc-stage.is-done .rc-stage-pct { color: var(--green); }
+.rc-stage-flag { display: flex; align-items: center; gap: 6px; margin-top: 1px; min-width: 0; }
+.rc-flag-text { font-size: 11px; color: #ff9cc6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-stage-bar { flex: 1; min-width: 24px; height: 4px; }
+.rc-demo-note {
+  display: flex; align-items: center; gap: 6px; margin-top: 9px; padding-top: 7px; border-top: 1px dashed var(--border);
+  font-size: 11px; color: #ffe066; white-space: nowrap; overflow: hidden;
+}
+
+/* ---- 左：抽出された構造 ---- */
+.rc-structs { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.rc-count { font-size: 12px; color: var(--text-dim); }
+.rc-st-list {
+  list-style: none; margin: 0; padding: 0 2px 0 0;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px 6px; align-content: start;
+  overflow: auto; min-height: 0; scroll-behavior: smooth;
+}
+.rc-st {
+  display: flex; align-items: center; gap: 7px; height: 21px; padding: 0 7px; border-radius: 6px;
+  font-size: 12px; color: var(--text-faint); transition: background 0.2s, color 0.2s;
+}
+.rc-st-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c); opacity: 0.28; transition: opacity 0.2s, box-shadow 0.2s; }
+.rc-st-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-st-mark {
+  width: 15px; height: 15px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  border: 1.5px solid var(--border-strong); font-size: 9px; font-weight: 900; line-height: 1;
+}
+.rc-st.is-active { color: var(--text); background: var(--blue-soft); }
+.rc-st.is-active .rc-st-dot { opacity: 1; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 30%, transparent), 0 0 10px var(--c); }
+.rc-st.is-active .rc-st-mark { border-color: #7fbaff; border-top-color: transparent; animation: spin 0.8s linear infinite; }
+.rc-st.is-done { color: var(--text); }
+.rc-st.is-done .rc-st-dot { opacity: 1; }
+.rc-st.is-done .rc-st-mark { background: var(--green); border-color: var(--green); color: #04210f; }
+.rc-st.is-done .rc-st-mark::after { content: "✓"; }
+.rc-st.just-done .rc-st-mark { animation: rcPop 0.35s ease-out; }
+.rc-st.is-done:hover, .rc-st.is-hover { background: var(--surface-3); }
+.rc-st.is-hover .rc-st-dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 30%, transparent); }
+@keyframes rcPop { 0% { transform: scale(0.4); } 70% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+/* ---- 中央：3D ビュー ---- */
+.rc-view {
+  position: relative; min-height: 0; overflow: hidden;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 46%, rgba(30, 72, 140, 0.32) 0%, rgba(8, 16, 32, 0) 70%),
+    linear-gradient(180deg, #070d1a 0%, #04070e 100%);
+}
+.rc-view::before {
+  /* うっすらとしたグリッド */
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+  background-image:
+    linear-gradient(rgba(80, 140, 230, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 140, 230, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 30%, transparent 100%);
+}
+.rc-three { position: absolute; inset: 0; min-height: 0; border-radius: 0; }
+.rc-vp-label { position: absolute; left: 12px; top: 10px; display: flex; flex-direction: column; gap: 1px; pointer-events: none; z-index: 2; }
+.rc-vp-label b { font-size: 13px; }
+.rc-vp-label span { font-size: 11px; color: var(--text-faint); }
+.rc-vp-tools { position: absolute; right: 10px; top: 10px; display: flex; align-items: center; gap: 6px; z-index: 2; }
+.rc-vp-tools .chip { height: 28px; padding: 0 11px; font-size: 12px; background: rgba(12, 20, 36, 0.8); }
+.rc-vp-tools .chip.is-on { background: var(--blue); }
+.rc-vp-tools .icon-btn { width: 28px; height: 28px; background: rgba(23, 36, 61, 0.85); color: var(--text-dim); }
+.rc-vp-stage {
+  position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 2;
+  display: inline-flex; align-items: center; gap: 8px; max-width: calc(100% - 24px);
+  height: 30px; padding: 0 14px; border-radius: 15px;
+  background: rgba(10, 18, 34, 0.82); border: 1px solid rgba(88, 196, 255, 0.35); backdrop-filter: blur(4px);
+  font-size: 12.5px; font-weight: 600; color: #cfe6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  pointer-events: none;
+}
+.rc-vp-stage.is-done { border-color: rgba(34, 197, 94, 0.5); color: #b9f5cf; }
+.rc-vp-stage.is-done .rc-ico { color: var(--green); }
+.rc-vp-dot { width: 7px; height: 7px; border-radius: 50%; background: #58c4ff; box-shadow: 0 0 8px #58c4ff; animation: rcBlink 1s ease-in-out infinite; flex: none; }
+@keyframes rcBlink { 50% { opacity: 0.3; } }
+.rc-vp-legend { position: absolute; left: 12px; bottom: 11px; display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-dim); pointer-events: none; z-index: 2; }
+.rc-legend-swatch { width: 16px; height: 0; border-top: 2px solid rgba(255, 255, 255, 0.85); }
+.rc-vp-hint { position: absolute; right: 12px; bottom: 11px; font-size: 11px; color: var(--text-faint); pointer-events: none; z-index: 2; }
+.rc-loading {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-size: 12.5px; color: var(--text-dim); pointer-events: none; transition: opacity 0.4s; z-index: 1;
+}
+.rc-loading.is-hidden { opacity: 0; }
+.rc-loading.is-error { padding: 0 24px; text-align: center; }
+.rc-tip {
+  position: absolute; z-index: 3; pointer-events: none;
+  display: flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 8px; white-space: nowrap;
+  background: rgba(10, 18, 34, 0.92); border: 1px solid var(--border-strong); box-shadow: var(--shadow-s);
+  font-size: 12px; transform: translate(14px, -50%); opacity: 0; transition: opacity 0.12s;
+}
+.rc-tip.is-show { opacity: 1; }
+.rc-tip-dot { width: 9px; height: 9px; border-radius: 50%; }
+.rc-tip-sub { color: var(--text-faint); font-size: 11px; }
+.rc-banner {
+  position: absolute; left: 50%; top: 56px; z-index: 3; pointer-events: none;
+  display: flex; align-items: center; gap: 12px; padding: 12px 18px 12px 14px; border-radius: 14px;
+  background: rgba(8, 26, 20, 0.88); border: 1px solid rgba(34, 197, 94, 0.55);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 6px rgba(34, 197, 94, 0.08);
+  backdrop-filter: blur(6px);
+  opacity: 0; transform: translate(-50%, -8px) scale(0.96);
+  transition: opacity 0.35s, transform 0.35s cubic-bezier(.2, .9, .3, 1.2);
+  max-width: calc(100% - 24px);
+}
+.rc-banner.is-show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.rc-banner.is-out { opacity: 0; transform: translate(-50%, -6px) scale(0.98); transition-duration: 0.6s; }
+.rc-banner-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #04210f; flex: none; }
+.rc-banner-title { font-size: 15px; font-weight: 800; color: #dfffea; white-space: nowrap; }
+.rc-banner-sub { font-size: 12px; color: #a6dcb9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-banner > div { min-width: 0; }
+
+/* ---- 右：2D CT ---- */
+.rc-ct { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+.rc-ct-head { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.rc-ct-sub { font-size: 11.5px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-seg-chip { height: 28px; padding: 0 11px; font-size: 12px; flex: none; }
+.rc-seg-chip .dot { background: conic-gradient(#7fd3ff 0 25%, #e0566b 0 50%, #f4efe4 0 75%, #a0522d 0); }
+.rc-ct-host { flex: 1; min-height: 0; }
+.rc-ct .ct-controls { gap: 8px 10px; }
+
+/* ---- アクションバー ---- */
+.rc-actions { min-height: 58px; flex-wrap: nowrap; }
+.rc-hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-actions .btn[hidden] { display: none; }
+.rc-skip, .rc-replay { gap: 6px; }
+.rc-next { gap: 6px; }
+.rc-next .rc-ico { margin-right: -4px; }
+
+/* ---- レスポンシブ ---- */
+@media (max-height: 800px) and (min-width: 901px) {
+  .rc-body { padding: 10px; gap: 10px; }
+  .rc-side { gap: 8px; }
+  .rc-card { padding: 9px 11px; }
+  .rc-total-pct { font-size: 18px; }
+  .rc-stages { margin-top: 8px; gap: 5px; }
+  .rc-stage::before { bottom: -5px; }
+  .rc-demo-note { margin-top: 7px; padding-top: 6px; }
+  .rc-st { height: 20px; font-size: 11.5px; }
+}
+@media (max-width: 1320px) {
+  .rc-tb-desc { display: none; }
+}
+@media (max-width: 1200px) {
+  .rc-body { grid-template-columns: 258px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding: 10px; }
+  .rc-tb-date { display: none; }
+  .rc-ct-sub { display: none; }
+  .rc-vp-hint { display: none; }
+}
+@media (max-width: 900px) {
+  .rc-toolbar { flex-wrap: wrap; }
+  .rc-tb-meta { order: 3; flex-basis: 100%; flex-wrap: wrap; }
+  .rc-body { grid-template-columns: minmax(0, 1fr); }
+  .rc-side { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .rc-st-list { overflow: visible; }
+  .rc-view { height: 380px; }
+  .rc-ct { height: 500px; }
+  .rc-actions { flex-wrap: wrap; }
+  .rc-hint { white-space: normal; flex-basis: 100%; }
+}
+@media (min-width: 560px) and (max-width: 900px) {
+  .rc-side { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}

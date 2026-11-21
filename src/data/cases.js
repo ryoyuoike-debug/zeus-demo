@@ -45,5 +45,5 @@ export const DEMO_NETWORK = {
 export const DEVICES = [
   { id: 'quest', name: 'Meta Quest 3', kind: 'HMD', conn: 'USB', doneMessage: 'データ転送完了' },
   { id: 'xreal', name: 'XREAL（Beam Pro）', kind: 'ARグラス', conn: 'USB', doneMessage: 'データ転送完了' },
-  { id: 'ios', name: 'iPad / iPhone', kind: 'タブレット・スマートフォン', conn: 'USB', doneMessage: 'データ転送準備が完了' },
+  { id: 'ios', name: 'iPad・iPhone', kind: 'タブレット・スマートフォン', conn: 'USB', doneMessage: 'データ転送準備が完了' },
 ];

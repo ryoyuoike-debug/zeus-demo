@@ -12,7 +12,13 @@ export function h(tag, attrs = {}, ...children) {
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;
     if (k === 'class') el.className = v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k === 'style' && typeof v === 'object') {
+      // CSS カスタムプロパティ（--xxx）は setProperty でないと設定できない
+      for (const [sk, sv] of Object.entries(v)) {
+        if (sv == null) continue;
+        if (sk.startsWith('--')) el.style.setProperty(sk, sv); else el.style[sk] = sv;
+      }
+    }
     else if (k === 'dataset') Object.assign(el.dataset, v);
     else if (k === 'html') el.innerHTML = v;
     else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
@@ -52,14 +58,35 @@ export function demoBadge(text = 'デモ用の模擬値') {
   return h('span', { class: 'badge badge-demo' }, text);
 }
 
+/** 開いているダイアログ（画面を切り替えたときにまとめて閉じる） */
+const openDialogs = new Set();
+/** 開いているダイアログをすべて閉じる（結果は null） */
+export function closeAllDialogs() {
+  for (const close of [...openDialogs]) close(null);
+}
+
 /**
  * モーダルダイアログ。
- * @param {{title:string, body: (Node|string), buttons?: Array<{label:string, value:any, kind?:'primary'|'accent'|'ghost'}>, width?: string}} o
- * @returns {Promise<any>} 押されたボタンの value（Esc / 背景クリックは null）
+ * @param {{title:string, body: (Node|string), buttons?: Array<{label:string, value:any, kind?:'primary'|'accent'|'ghost'}>, width?: string, signal?: AbortSignal}} o
+ * @returns {Promise<any>} 押されたボタンの value（Esc / 背景クリック / signal の中断は null）
  */
-export function dialog({ title, body, buttons = [{ label: 'OK', value: true, kind: 'primary' }], width }) {
+export function dialog({ title, body, buttons = [{ label: 'OK', value: true, kind: 'primary' }], width, signal }) {
   return new Promise((resolve) => {
-    const close = (v) => { overlay.classList.remove('is-open'); setTimeout(() => overlay.remove(), 160); document.removeEventListener('keydown', onKey); resolve(v); };
+    if (signal?.aborted) { resolve(null); return; }
+    let closed = false;
+    const close = (v) => {
+      if (closed) return;
+      closed = true;
+      openDialogs.delete(close);
+      signal?.removeEventListener('abort', onAbort);
+      overlay.classList.remove('is-open');
+      setTimeout(() => overlay.remove(), 160);
+      document.removeEventListener('keydown', onKey);
+      resolve(v);
+    };
+    const onAbort = () => close(null);
+    signal?.addEventListener('abort', onAbort, { once: true });
+    openDialogs.add(close);
     const onKey = (e) => { if (e.key === 'Escape') close(null); };
     const box = h('div', { class: 'dialog', role: 'dialog', 'aria-modal': 'true', style: width ? { width } : null },
       h('div', { class: 'dialog-title' }, title),
@@ -103,12 +130,12 @@ export function animateNumber(el, from, to, ms = 800, fmt = (v) => v.toFixed(0))
   tick();
 }
 
-/** トグルスイッチ */
-export function toggleSwitch({ label, checked = false, onchange, title }) {
+/** トグルスイッチ（variant: 'research' で研究開発中の色） */
+export function toggleSwitch({ label, checked = false, onchange, title, variant }) {
   const input = h('input', { type: 'checkbox', role: 'switch' });
   input.checked = checked;
   input.addEventListener('change', () => onchange?.(input.checked));
-  return h('label', { class: 'switch', title }, input, h('span', { class: 'switch-track' }, h('span', { class: 'switch-thumb' })), label ? h('span', { class: 'switch-label' }, label) : null);
+  return h('label', { class: 'switch' + (variant ? ` switch-${variant}` : ''), title }, input, h('span', { class: 'switch-track' }, h('span', { class: 'switch-thumb' })), label ? h('span', { class: 'switch-label' }, label) : null);
 }
 
 /** ラベル付きスライダー */

@@ -5,7 +5,7 @@ import './styles/main.css';
 import { SCREENS, STEPS } from './app/screens.js';
 import { state, setState, subscribe, resetDemo, onNavigate, navigate } from './app/state.js';
 import { makeTourHelpers, removeTourCursor } from './app/tour.js';
-import { h, toggleSwitch, dialog } from './ui/dom.js';
+import { h, toggleSwitch, dialog, closeAllDialogs } from './ui/dom.js';
 import { LOGO_SVG, DISCLAIMER } from './ui/brand.js';
 import { showSettings, showVersion } from './ui/appDialogs.js';
 import { getAnatomyGeometries } from './three/meshing.js';
@@ -18,6 +18,7 @@ const researchSwitch = toggleSwitch({
   label: '研究開発機能を表示',
   checked: state.researchMode,
   title: '研究開発中（未承認）の機能をデモに含めます',
+  variant: 'research',
   onchange: (v) => setState({ researchMode: v }),
 });
 const header = h('header', { class: 'app-header' },
@@ -107,7 +108,8 @@ function frameFor(screen, body) {
 function go(id, params = {}, { fromHash = false } = {}) {
   const screen = SCREENS[id] ? SCREENS[id] : SCREENS.intro;
   if (screen.researchOnly && !state.researchMode) setState({ researchMode: true });
-  // 前の画面を破棄
+  // 前の画面で開いたダイアログを閉じてから、前の画面を破棄
+  closeAllDialogs();
   if (current) {
     current.abort.abort();
     try { current.instance?.destroy?.(); } catch (e) { console.error(e); }
@@ -175,8 +177,17 @@ const tourBar = h('div', { class: 'tour-bar', role: 'status', 'aria-live': 'poli
   h('button', { class: 'btn btn-ghost btn-sm', onclick: () => stopTour() }, '■ 停止'),
   h('div', { class: 'tour-progress' }, tourProgress));
 
+// 字幕バーの高さを CSS 変数に反映（PC 画面の下側の余白に使う）
+const tourBarRO = new ResizeObserver(() => {
+  document.documentElement.style.setProperty('--tour-bar-h', `${Math.ceil(tourBar.offsetHeight)}px`);
+});
+
 function updateTourButton() {
-  tourBtn.textContent = tour ? '■ ツアーを停止' : '▶ ガイドツアー';
+  // 狭い画面では短いラベル（main.css の .lbl-long / .lbl-short）
+  tourBtn.replaceChildren(
+    h('span', { class: 'lbl-long' }, tour ? '■ ツアーを停止' : '▶ ガイドツアー'),
+    h('span', { class: 'lbl-short' }, tour ? '■ 停止' : '▶ ツアー'));
+  tourBtn.title = tour ? 'ガイドツアーを停止' : 'ガイドツアーを開始';
   tourBtn.classList.toggle('btn-accent', !tour);
   tourBtn.classList.toggle('btn-ghost', !!tour);
 }
@@ -191,6 +202,8 @@ async function startTour() {
   resetDemo();
   setState({ tourActive: true });
   document.body.appendChild(tourBar);
+  document.body.classList.add('is-touring');
+  tourBarRO.observe(tourBar);
   const steps = visibleSteps().filter((s) => s.inTour !== false);
   const setCaption = (text) => { tourCaption.textContent = text; };
   const t = makeTourHelpers({ signal: abort.signal, setCaption });
@@ -218,7 +231,9 @@ function stopTour() {
 }
 function endTour() {
   tour = null;
+  tourBarRO.disconnect();
   tourBar.remove();
+  document.body.classList.remove('is-touring');
   removeTourCursor();
   updateTourButton();
   setState({ tourActive: false });

@@ -1,0 +1,258 @@
+/* =============================================================================
+   S5 関心領域（描画画面）
+   ============================================================================= */
+/* 低い画面（1280×720 など）でもウィンドウが画面内に収まるように */
+.pc-window:has(.screen-roi) { min-height: 0; }
+
+.roi { position: relative; --roi-line: #3ee0ff; --roi-line-soft: rgba(62, 224, 255, 0.14); --roi-ai: #ff4fa3; }
+
+/* ---- ツールバー ---- */
+.roi-toolbar { gap: 14px; padding: 8px 14px; flex-wrap: nowrap; min-width: 0; }
+.roi-toolbar .pc-section-title { white-space: nowrap; font-size: 14px; }
+.roi-case { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 12.5px; white-space: nowrap; overflow: hidden; }
+.roi-case > span { overflow: hidden; text-overflow: ellipsis; }
+.roi-case-id { color: var(--text); font-weight: 700; padding: 1px 8px; border-radius: 5px; background: var(--surface); border: 1px solid var(--border); }
+.roi-case-sep { width: 1px; height: 14px; background: var(--border-strong); flex: none; }
+.roi-tb-spacer { flex: 1; }
+.roi-mode-badge { flex: none; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+
+/* ---- 本体（ツール | CT | 3D） ---- */
+.roi-content {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: 212px minmax(0, 1.04fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  background: radial-gradient(900px 340px at 40% 0%, rgba(47, 139, 255, 0.05), transparent 70%), var(--surface);
+}
+
+/* ---- 左: ツール ---- */
+.roi-rail { display: flex; flex-direction: column; gap: 10px; min-height: 0; min-width: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+.roi-card {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 11px 11px; transition: border-color 0.25s, box-shadow 0.25s;
+}
+.roi-card-head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-dim); letter-spacing: 0.04em; margin-bottom: 8px; min-height: 20px; }
+.roi-head-badge { margin-left: auto; display: inline-flex; }
+.roi-head-badge .badge { height: 18px; font-size: 10px; padding: 0 7px; letter-spacing: 0; }
+
+.roi-tool-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.roi-tool {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  height: 54px; padding: 0 2px; border-radius: 8px;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text-dim); cursor: pointer; font-size: 12px; font-weight: 600; white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.2s, opacity 0.2s, filter 0.2s;
+}
+.roi-tool:hover:not(:disabled) { color: var(--text); background: var(--surface-3); }
+.roi-tool.is-on { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 0 0 3px var(--blue-soft); }
+.roi-tool:disabled { opacity: 0.36; filter: grayscale(1); cursor: not-allowed; }
+.roi-tool-ico { display: grid; place-items: center; height: 22px; }
+.roi-tool.is-auto { animation: roiAuto 0.85s ease-out 2; }
+@keyframes roiAuto { 0% { box-shadow: 0 0 0 0 rgba(47, 139, 255, 0.8); } 100% { box-shadow: 0 0 0 14px rgba(47, 139, 255, 0); } }
+
+.roi-size-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.roi-size-label { font-size: 11.5px; color: var(--text-faint); white-space: nowrap; }
+.roi-size-seg { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); transition: opacity 0.2s; }
+.roi-size-seg.is-dim { opacity: 0.55; }
+.roi-size-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 4px 0; }
+.roi-size-dot { display: inline-block; border-radius: 50%; background: currentColor; opacity: 0.8; flex: none; }
+.roi-mini-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.roi-mini { gap: 4px; padding: 0 6px; }
+.roi-mini-ico { display: inline-grid; place-items: center; }
+.roi-mini-ico svg { width: 15px; height: 15px; }
+
+/* 2 点ライン・深度計測 */
+.roi-line-card.is-active { border-color: rgba(62, 224, 255, 0.55); box-shadow: 0 0 0 3px rgba(62, 224, 255, 0.08); }
+.roi-pts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.roi-pt {
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+  padding: 4px 7px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border);
+  font-size: 12px; transition: border-color 0.2s, background 0.2s;
+}
+.roi-pt-dot { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--text-faint); flex: none; }
+.roi-pt.is-set .roi-pt-dot.is-start { border-color: var(--roi-line); background: transparent; box-shadow: inset 0 0 0 1.5px rgba(62, 224, 255, 0.4); }
+.roi-pt.is-set .roi-pt-dot.is-end { border-color: #fff; background: var(--roi-line); }
+.roi-pt.is-wait { border-color: rgba(62, 224, 255, 0.6); background: var(--roi-line-soft); }
+.roi-pt.is-wait .roi-pt-dot { border-color: var(--roi-line); animation: roiBlink 1s ease-in-out infinite; }
+@keyframes roiBlink { 50% { transform: scale(1.4); box-shadow: 0 0 8px rgba(62, 224, 255, 0.9); } }
+.roi-pt-name { font-weight: 700; white-space: nowrap; }
+.roi-pt-val { margin-left: auto; color: var(--text-dim); font-size: 11px; white-space: nowrap; }
+
+.roi-depth {
+  position: relative; margin-top: 8px; padding: 8px 10px 9px; border-radius: 8px;
+  background: linear-gradient(180deg, rgba(62, 224, 255, 0.07), rgba(62, 224, 255, 0.02));
+  border: 1px solid rgba(62, 224, 255, 0.22);
+  overflow: hidden;
+}
+.roi-depth::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(62, 224, 255, 0.18) 50%, transparent 70%);
+  transform: translateX(-100%);
+}
+.roi-depth.is-counting::after { animation: roiSweep 1.2s ease-out; }
+@keyframes roiSweep { 0% { opacity: 1; transform: translateX(-100%); } 100% { opacity: 0.2; transform: translateX(100%); } }
+.roi-line-card.is-empty .roi-depth { opacity: 0.55; }
+.roi-depth-label { display: flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--text-dim); }
+.roi-depth-ico svg { width: 15px; height: 15px; color: var(--roi-line); }
+.roi-depth-value { display: flex; align-items: baseline; gap: 5px; margin: 1px 0 2px; }
+.roi-depth-num { font-size: 30px; font-weight: 700; line-height: 1.15; color: #bff4ff; letter-spacing: -0.01em; text-shadow: 0 0 18px rgba(62, 224, 255, 0.35); font-variant-numeric: tabular-nums; }
+.roi-unit { font-size: 13px; color: var(--text-dim); font-weight: 600; }
+.roi-unit-s { color: var(--text-faint); }
+.roi-kv { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; font-size: 11.5px; color: var(--text-dim); }
+.roi-kv > span:first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.roi-kv > span:last-child { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.roi-depth-note { margin-top: 7px; font-size: 11.5px; color: var(--text-faint); line-height: 1.5; }
+.roi-depth-note[hidden] { display: none; }
+.roi-reline { width: 100%; margin-top: 8px; gap: 5px; }
+.roi-reline[hidden] { display: none; }
+.roi-line-card.is-active .roi-reline { background: transparent; }
+
+/* 関心領域の情報 */
+.roi-stats .roi-kv + .roi-kv { margin-top: 3px; }
+.roi-swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--orange); box-shadow: 0 0 0 2px rgba(255, 138, 31, 0.25); }
+.roi-stats.is-empty .roi-swatch { background: transparent; border: 1.5px dashed var(--orange); box-shadow: none; }
+
+/* ---- 中央: CT ---- */
+.roi-ct, .roi-3d { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.roi-panel-head { display: flex; align-items: center; gap: 10px; min-height: 30px; margin-bottom: 8px; font-size: 12.5px; }
+.roi-panel-head strong { font-size: 13px; white-space: nowrap; }
+.roi-prompt {
+  margin-left: auto; flex: 0 1 auto; display: inline-flex; align-items: center; gap: 2px; min-width: 0;
+  height: 26px; padding: 0 11px; border-radius: 13px; font-size: 12px; white-space: nowrap; overflow: hidden;
+  background: var(--roi-line-soft); border: 1px solid rgba(62, 224, 255, 0.5); color: #d4f8ff;
+  animation: roiPromptIn 0.3s ease both;
+}
+.roi-prompt b { color: var(--roi-line); }
+.roi-prompt.is-pen, .roi-prompt.is-eraser { background: var(--orange-soft); border-color: rgba(255, 138, 31, 0.55); color: #ffe2c6; }
+.roi-prompt.is-pen b, .roi-prompt.is-eraser b { color: #ffb066; }
+@keyframes roiPromptIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.roi-ct-host { flex: 1; min-height: 0; }
+.roi-zoom-btn { flex: none; gap: 5px; padding: 0 9px; }
+.roi-ct .ct-viewer { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4); }
+.roi[data-tool="line"] .roi-ct .ct-viewer { border-color: rgba(62, 224, 255, 0.45); }
+.roi[data-tool="pen"] .roi-ct .ct-viewer, .roi[data-tool="eraser"] .roi-ct .ct-viewer { border-color: rgba(255, 138, 31, 0.4); }
+.roi-ct .ct-slider-wrap { position: relative; }
+.roi-slice-marks { position: absolute; height: 6px; pointer-events: none; }
+.roi-slice-marks i { position: absolute; top: 0; width: 2px; height: 6px; margin-left: -1px; border-radius: 1px; background: var(--orange); opacity: 0.9; }
+.roi-slice-marks i.is-pt { width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: transparent; border: 1.5px solid var(--roi-line); opacity: 1; }
+.roi-slice-marks i.is-pt.is-end { background: var(--roi-line); border-color: #fff; }
+
+/* ---- 右: 3D ---- */
+.roi-3d-head { flex-wrap: nowrap; }
+.roi-chip-groups { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; min-width: 0; }
+.roi-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; padding: 3px; border-radius: 17px; background: rgba(8, 13, 24, 0.55); border: 1px solid var(--border); }
+.roi-chips[hidden] { display: none; }
+.roi-chips-ai { border-color: rgba(225, 29, 116, 0.45); background: rgba(225, 29, 116, 0.06); }
+.roi-chip { height: 26px; padding: 0 10px; font-size: 12px; gap: 5px; border-color: transparent; background: transparent; }
+.roi-chip:not(.is-on) { color: var(--text-faint); }
+.roi-chip:not(.is-on) .dot { opacity: 0.45; }
+.roi-chip .dot { width: 8px; height: 8px; }
+.roi-chip[hidden] { display: none; }
+.roi-chip-ai .badge { height: 17px; padding: 0 6px; font-size: 10px; }
+.roi-chip-ai.is-on .badge { background: rgba(255, 255, 255, 0.16); color: #fff; border-color: rgba(255, 255, 255, 0.5); }
+
+.roi-3d-view {
+  position: relative; flex: 1; min-height: 0;
+  border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 45%, rgba(40, 78, 140, 0.32), rgba(6, 10, 18, 0) 70%),
+    linear-gradient(rgba(120, 160, 220, 0.045) 1px, transparent 1px) 0 0 / 40px 40px,
+    linear-gradient(90deg, rgba(120, 160, 220, 0.045) 1px, transparent 1px) 0 0 / 40px 40px,
+    #050912;
+}
+.roi-3d-host { position: absolute; inset: 0; min-height: 0; border-radius: 0; }
+.roi-3d-caption { position: absolute; left: 10px; top: 8px; z-index: 3; font-size: 11px; color: var(--text-faint); pointer-events: none; }
+.roi-3d-tools { position: absolute; right: 8px; top: 8px; z-index: 3; display: flex; gap: 5px; }
+.roi-3d-btn { width: 32px; height: 32px; background: rgba(8, 13, 24, 0.72); color: var(--text-dim); }
+.roi-3d-btn:hover { color: var(--text); }
+.roi-3d-btn svg { width: 17px; height: 17px; }
+.roi-3d-hint { position: absolute; right: 10px; bottom: 8px; z-index: 3; font-size: 11px; color: var(--text-faint); pointer-events: none; white-space: nowrap; }
+.roi-legend { position: absolute; left: 10px; bottom: 8px; z-index: 3; display: flex; flex-wrap: wrap; gap: 4px 10px; max-width: calc(100% - 210px); padding: 4px 10px; border-radius: 12px; background: rgba(8, 13, 24, 0.66); border: 1px solid var(--border); font-size: 11px; color: var(--text-dim); pointer-events: none; }
+.roi-lg { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.roi-lg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.roi-lg i.is-roi { background: var(--orange); opacity: 0.85; }
+.roi-lg i.is-line { height: 3px; width: 14px; border-radius: 2px; background: var(--roi-line); box-shadow: 0 0 6px rgba(62, 224, 255, 0.8); }
+.roi-lg i.is-nodule { border-radius: 50%; background: var(--yellow); }
+.roi-lg i.is-ai { background: transparent; border: 1.5px dashed var(--roi-ai); }
+.roi-lg .badge { height: 16px; font-size: 9.5px; padding: 0 5px; }
+.roi-3d-loading {
+  position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-size: 13px; color: var(--text-dim); background: rgba(6, 10, 19, 0.5); transition: opacity 0.4s;
+}
+.roi-3d-loading.is-hidden { opacity: 0; pointer-events: none; }
+
+.roi-3d-foot { display: flex; align-items: center; gap: 12px; min-height: 34px; padding-top: 8px; }
+.roi-3d-foot .slider { flex: 1; max-width: 380px; }
+.roi-guide-note {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  color: #cfe3ff; background: var(--blue-soft); border: 1px solid rgba(47, 139, 255, 0.55);
+  opacity: 0; transform: translateX(-4px); transition: opacity 0.25s, transform 0.25s;
+}
+.roi-guide-note.is-shown { opacity: 1; transform: none; }
+.roi-guide-note i { width: 12px; height: 12px; border-radius: 2px; border: 1.5px solid var(--blue); background: repeating-linear-gradient(90deg, rgba(47, 139, 255, 0.5) 0 1px, transparent 1px 4px); }
+
+/* 3D のラベル */
+.roi3d-labels { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+.roi3d-label {
+  position: absolute; left: 0; top: 0;
+  padding: 2px 8px; border-radius: 10px; font: 600 11px/1.4 var(--font); white-space: nowrap;
+  background: rgba(8, 14, 26, 0.85); color: #d9f9ff; border: 1px solid rgba(62, 224, 255, 0.7);
+  opacity: 0; transition: opacity 0.25s; will-change: transform;
+}
+.roi3d-label.is-shown { opacity: 1; }
+.roi3d-label.is-shown.is-dim { opacity: 0.35; }
+.roi3d-label.is-end { background: rgba(62, 224, 255, 0.92); color: #032029; border-color: rgba(255, 255, 255, 0.8); }
+.roi3d-label.is-depth { color: #bff4ff; border-color: rgba(62, 224, 255, 0.5); font-family: var(--mono); font-weight: 700; }
+.roi3d-label.is-ext { background: transparent; border: 0; color: rgba(160, 235, 255, 0.85); font-weight: 500; font-size: 10.5px; text-shadow: 0 1px 2px #000; }
+.roi3d-label.is-roi { background: rgba(255, 138, 31, 0.9); color: #1b0d00; border-color: rgba(255, 220, 180, 0.8); }
+
+/* ---- アクションバー ---- */
+.roi-actions { flex-wrap: nowrap; }
+.roi-hint { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.roi-actions .spacer { flex: 0 0 4px; }
+.roi-next { flex: none; }
+
+/* ---- ダイアログ ---- */
+.roi-dialog p + p, .roi-dialog p + label, .roi-dialog label + p { margin-top: 10px; }
+.roi-check { display: flex; align-items: center; gap: 8px; color: var(--text); cursor: pointer; }
+.roi-check input { width: 16px; height: 16px; accent-color: var(--blue); }
+
+/* ---- 幅・高さが小さい画面 ---- */
+@media (max-width: 1360px) {
+  .roi-content { grid-template-columns: 196px minmax(0, 1.04fr) minmax(0, 1fr); gap: 10px; padding: 10px; }
+  .roi-hide-narrow { display: none; }
+  .roi-3d-hint { display: none; }
+  .roi-legend { max-width: calc(100% - 20px); }
+}
+@media (max-height: 800px) {
+  .roi-content { padding: 10px; gap: 10px; }
+  .roi-rail { gap: 8px; }
+  .roi-card { padding: 8px 10px 9px; }
+  .roi-card-head { margin-bottom: 6px; }
+  .roi-tool { height: 48px; gap: 1px; }
+  .roi-tool-ico svg { width: 19px; height: 19px; }
+  .roi-depth { padding: 6px 9px 7px; margin-top: 6px; }
+  .roi-depth-num { font-size: 24px; }
+  .roi-depth-note { display: none; }
+  .roi-panel-head { margin-bottom: 6px; min-height: 28px; }
+  .roi-3d-foot { padding-top: 6px; min-height: 30px; }
+  .roi-toolbar { padding: 6px 14px; }
+}
+@media (max-height: 760px) {
+  .roi-stats { display: none; }
+}
+@media (max-width: 900px) {
+  .roi-toolbar { flex-wrap: wrap; }
+  .roi-content { grid-template-columns: minmax(0, 1fr); }
+  .roi-rail { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); overflow: visible; }
+  .roi-stats { display: block; }
+  .roi-ct { height: 460px; }
+  .roi-3d { height: 440px; }
+  .roi-3d-head { flex-wrap: wrap; }
+  .roi-chip-groups { margin-left: 0; justify-content: flex-start; }
+  .roi-actions { flex-wrap: wrap; }
+  .roi-hint { flex-basis: 100%; order: 3; white-space: normal; }
+}

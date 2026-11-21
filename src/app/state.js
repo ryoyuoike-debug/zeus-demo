@@ -15,6 +15,8 @@ const initial = () => ({
   reconstructed: false,
   /** マーカ確認が完了 */
   markersConfirmed: false,
+  /** マーカの位置（やり直しで置き直した場合）: [[x,y,z] ×3]（患者座標 mm）。null なら検出したままの位置 */
+  markerPositions: null,
   /** 関心領域（ROI）: ペンで塗った円の集合 [{x,y,z,r}]（患者座標 mm） */
   roi: [],
   /** 2 点ライン: {start:[x,y,z]|null, end:[x,y,z]|null} */

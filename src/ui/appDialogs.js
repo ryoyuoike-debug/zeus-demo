@@ -24,7 +24,7 @@ export function showVersion() {
         row('アプリ', 'Zeus（デモビルド）'),
         row('バージョン', 'Demo build'),
         row('画像データ', '合成胸部ファントム（架空のデータ）'),
-        row('臓器の自動抽出', h('span', {}, 'オープンソースのセグメンテーションモデル（nnU-Net 系）を利用 ', researchBadge())))),
+        row('臓器の自動抽出', h('span', {}, 'AI による自動抽出 ', researchBadge())))),
     h('p', { class: 'small faint' }, 'このデモは説明用のシミュレーションです。実製品のバージョン情報・認証番号は表示していません。'));
   return dialog({ title: 'バージョン情報', body, width: '540px', buttons: [{ label: '閉じる', value: true, kind: 'primary' }] });
 }

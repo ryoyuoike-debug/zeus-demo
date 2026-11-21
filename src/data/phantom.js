@@ -496,11 +496,20 @@ function hashNoise(x, y, z) {
  */
 export function renderAxialHU(z, size = 256, fov = 380) {
   const out = new Float32Array(size * size);
+  renderAxialHURows(z, size, fov, out, 0, size);
+  return out;
+}
+
+/**
+ * 軸位断の一部の行（j0 〜 j1-1）だけを計算して out に書き込む。
+ * 先読みを小分けにして、アニメーション中のカクつきを防ぐために使う。
+ */
+export function renderAxialHURows(z, size, fov, out, j0, j1) {
   const segs = SEGMENTS.filter((s) => z >= s.zmin && z <= s.zmax);
   const px = fov / size;
   const cx = 0, cy = -6;
   const markers = MARKERS.filter((m) => Math.abs(m.pos[2] - z) < MARKER_RADIUS);
-  for (let j = 0; j < size; j++) {
+  for (let j = j0; j < j1; j++) {
     // 画像上が腹側（前）
     const y = cy + fov / 2 - (j + 0.5) * px;
     for (let i = 0; i < size; i++) {
