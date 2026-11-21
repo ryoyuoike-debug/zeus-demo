@@ -135,11 +135,12 @@
 /* ---- 右側 ---- */
 .mk-side { display: grid; grid-template-columns: clamp(128px, 26%, 172px) minmax(0, 1fr); gap: 10px; min-height: 0; min-width: 0; }
 .mk-list { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
-.mk-side-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 24px; flex-wrap: wrap; }
+.mk-side-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 24px; flex-wrap: wrap; flex: none; }
 .mk-side-head h3 { font-size: 13px; white-space: nowrap; }
 .mk-count { font-size: 10.5px; padding: 0 7px; }
 
-.mk-cards { display: flex; flex-direction: column; gap: 7px; }
+/* 高さが足りないときは、カードの列の中だけをスクロールする（アクションバーの下にはみ出さない） */
+.mk-cards { display: flex; flex-direction: column; gap: 7px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .mk-card {
   display: flex; flex-direction: column; gap: 0; padding: 0; min-width: 0;
   border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2);
@@ -229,6 +230,7 @@
   .mk-content { padding: 10px; gap: 10px; }
   .mk-card-name { padding: 4px 8px; }
   .mk-3d-hint { display: none; }
+  .mk-thumb { aspect-ratio: 200 / 80; }
 }
 @media (max-width: 1360px) {
   .mk-hide-narrow { display: none; }

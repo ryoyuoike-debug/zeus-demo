@@ -111,8 +111,8 @@
   user-select: none;
 }
 .gw-icon { display: inline-grid; line-height: 0; }
-.gw-title { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
-.gw-sub { font-size: 12px; color: var(--text-dim); }
+.gw-title { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+.gw-sub { font-size: 12px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .gw-winbtns { margin-left: auto; display: flex; }
 .gw-winbtn { width: 38px; height: 28px; display: grid; place-items: center; color: var(--text-faint); font-size: 12px; border: 0; background: none; border-radius: 4px; }
 button.gw-winbtn { cursor: pointer; color: var(--text-dim); }
@@ -434,6 +434,8 @@ button.gw-winbtn:disabled { opacity: 0.35; cursor: not-allowed; }
   .gw-conn-note { display: none; }
 }
 @media (max-width: 600px) {
+  .imp-crumbs { flex-wrap: wrap; row-gap: 4px; overflow: visible; }
+  .gw-sub { display: none; }
   .imp-pos-grid { grid-template-columns: 1fr; }
   .gw-search-btns, .gw-tools { flex-wrap: wrap; }
 }

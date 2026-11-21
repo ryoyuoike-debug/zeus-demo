@@ -53,9 +53,11 @@ export default {
     // =====================================================================
     // 状態
     // =====================================================================
+    // 別の症例で描いた関心領域・ラインは読み込まない（state.roiCaseId が描いた症例）
+    const ownRoi = !state.roiCaseId || state.roiCaseId === state.caseId;
     /** @type {Array<{x:number,y:number,z:number,r:number}>} */
-    let circles = Array.isArray(state.roi) ? state.roi.map((o) => ({ ...o })) : [];
-    let line = state.line?.start && state.line?.end ? computeLine(state.line.start, state.line.end) : null;
+    let circles = ownRoi && Array.isArray(state.roi) ? state.roi.map((o) => ({ ...o })) : [];
+    let line = ownRoi && state.line?.start && state.line?.end ? computeLine(state.line.start, state.line.end) : null;
     /** 'line' | 'pen' | 'eraser' */
     let tool = line ? 'pen' : 'line';
     let size = 'L';
@@ -420,6 +422,14 @@ export default {
       undo.push({ circles, line });
       if (undo.length > 40) undo.shift();
     }
+    /** 関心領域・ラインを state に保存する（描いた症例の ID も一緒に。どちらも空なら null） */
+    function commitRoi() {
+      setState({
+        roi: circles.map((o) => ({ ...o })),
+        line: line ? { start: line.start.slice(), end: line.end.slice() } : { start: null, end: null },
+        roiCaseId: circles.length || line ? state.caseId : null,
+      });
+    }
 
     function setTool(t) {
       if (t === 'line') { if (tool !== 'line') enterLineMode(); return; }
@@ -474,7 +484,7 @@ export default {
       redrawing = false;
       scene.setLineDim(false);
       scene.setLine(L, { animate: true });
-      setState({ line: { start: L.start.slice(), end: L.end.slice() } });
+      commitRoi();
       grow = 0;
       startLineAnim();
       // 2 点を置いたら、自動で ROI 描画（ペン）に切り替える
@@ -512,7 +522,7 @@ export default {
       const changed = stroke.changed;
       stroke = null;
       if (changed) {
-        setState({ roi: circles.map((o) => ({ ...o })) });
+        commitRoi();
         scene.setRoi(circles, { delay: 40 });
       } else undo.pop();
       renderStats();
@@ -524,12 +534,14 @@ export default {
       const s = undo.pop();
       if (!s) { notify('元に戻す操作はありません', { ms: 1500 }); return; }
       const lineChanged = s.line !== line;
+      // ラインの引き直し中（始点を置くと 3D のラインを隠している）なら、3D のラインも戻す
+      const wasRedrawing = redrawing;
       circles = s.circles;
       line = s.line;
       if (tool === 'line') { draftStart = null; redrawing = false; scene.setLineDim(false); if (line) tool = 'pen'; }
-      setState({ roi: circles.map((o) => ({ ...o })), line: line ? { start: line.start.slice(), end: line.end.slice() } : { start: null, end: null } });
+      commitRoi();
       scene.setRoi(circles, { immediate: true });
-      if (lineChanged) { cancelAnimationFrame(animRaf); grow = 1; scene.setLine(line); setDepthDisplay(line); }
+      if (lineChanged || wasRedrawing) { cancelAnimationFrame(animRaf); grow = 1; scene.setLine(line); setDepthDisplay(line); }
       renderStats();
       render();
     }
@@ -553,15 +565,13 @@ export default {
       if (!circles.length && !dropLine) return;
       pushUndo();
       circles = [];
-      const patch = { roi: [] };
       if (dropLine) {
         line = null;
-        patch.line = { start: null, end: null };
         cancelAnimationFrame(animRaf);
         scene.setLine(null);
         setDepthDisplay(null);
       }
-      setState(patch);
+      commitRoi();
       scene.setRoi([], { immediate: true });
       renderStats();
       render();
@@ -591,10 +601,8 @@ export default {
     function saveAndNext() {
       if (stroke) endStroke();
       if (tool === 'line' && draftStart) cancelDraft();
-      setState({
-        roi: circles.map((o) => ({ ...o })),
-        line: line ? { start: line.start.slice(), end: line.end.slice() } : { start: null, end: null },
-      });
+      // 何も描いていないときは、別の症例で描いた関心領域・ラインを消さない
+      if (circles.length || line || !state.roiCaseId || state.roiCaseId === state.caseId) commitRoi();
       if (circles.length || line) toast('関心領域とラインを保存しました', { kind: 'success', ms: 2000 });
       else toast('関心領域は未設定のまま、端末への転送に進みます', { ms: 2400 });
       navigate('transfer');
@@ -723,7 +731,7 @@ export default {
       cancelAnimationFrame(animRaf);
       circles = []; line = null; draftStart = null; redrawing = false; undo.length = 0;
       tool = 'line'; size = 'L'; grow = 1;
-      setState({ roi: [], line: { start: null, end: null } });
+      commitRoi();
       scene.setRoi([], { immediate: true });
       scene.setLine(null);
       scene.setLineDim(false);

@@ -22,11 +22,13 @@ const NUM = ['①', '②', '③'];
 /** サムネイルの切り出し範囲（mm）と解像度 */
 const CROP = { wmm: 100, hmm: 56, pw: 200, ph: 112, dy: -15, ring: 22 };
 
-/** 置き直した位置（画面を離れても保持し、デモのリセットで破棄する） */
+/** 置き直した位置（画面を離れても保持し、デモのリセット・作業中の症例の切り替えで破棄する） */
 let manualPositions = null;
+let manualCaseId = state.caseId;
 subscribe((s, patch) => {
-  // resetDemo() は全項目をまとめて更新する
-  if ('imported' in patch && 'roi' in patch && 'markersConfirmed' in patch && !s.markersConfirmed) manualPositions = null;
+  // resetDemo() / selectCase() は markerPositions を null に戻す。別の症例に切り替わったときも破棄する
+  if (('markerPositions' in patch && !patch.markerPositions) || ('caseId' in patch && s.caseId !== manualCaseId)) manualPositions = null;
+  manualCaseId = s.caseId;
 });
 
 const sliceZ = (z) => sliceIndexToZ(zToSliceIndex(z));
@@ -486,7 +488,7 @@ export default {
 
     function startPlacing() {
       backup = marks.map((m) => ({ pos: m.pos, manual: m.manual, status: m.status }));
-      if (state.markersConfirmed) setState({ markersConfirmed: false });
+      // 確定済みの状態は、3点を置き終えたとき（finishPlacing）に解除する（キャンセル・画面移動では確定のまま）
       mode = 'placing';
       placeIdx = 0;
       marks.forEach((m, i) => { m.status = i === 0 ? 'placing' : 'unplaced'; scene.setState(i, 'ghost'); });
@@ -526,6 +528,8 @@ export default {
       mode = 'review';
       placeIdx = -1;
       manualPositions = marks.map((m) => m.pos.slice());
+      // 位置が変わったので、もう一度［確定］が必要。置き直した位置は state にも書いておく（確定時にも書き込む）
+      setState({ markersConfirmed: false, markerPositions: marks.map((m) => [...m.pos]) });
       scene.setPlacing(-1);
       ct.setInteraction('pan');
       ct.canvas.style.cursor = '';
@@ -541,7 +545,9 @@ export default {
         scene.setState(i, 'detected');
         renderThumb(i);
       });
-      mode = 'review';
+      // 確定済みの位置を置き直そうとしていた場合は、確定済みに戻す（確定した位置もそのまま）
+      mode = state.markersConfirmed ? 'confirmed' : 'review';
+      if (mode === 'confirmed') setState({ markerPositions: marks.map((m) => [...m.pos]) });
       placeIdx = -1;
       ctHover = null;
       scene.setPlacing(-1);

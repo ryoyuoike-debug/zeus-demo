@@ -642,6 +642,21 @@ void main() {
     }
     return null;
   }
+  /**
+   * 3D モデル（仮想表示）のピッキング。掴みで動かした後も、いま表示されている位置で判定する。
+   * 当たれば { point, object }、表示していない・当たらなければ null
+   */
+  function pickHolo(clientX, clientY) {
+    if (!holo.model || !holoRoot.visible) return null;
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    rc.setFromCamera(ndc, camera);
+    holoRoot.updateMatrixWorld(true);
+    const targets = [];
+    holoRoot.traverseVisible((o) => { if (o.isMesh) targets.push(o); });
+    const hit = rc.intersectObjects(targets, false)[0];
+    return hit ? { point: hit.point, object: hit.object } : null;
+  }
   const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   /** クライアント座標のレイと水平面 y = height の交点 */
   function rayPlane(clientX, clientY, height) {
@@ -689,7 +704,7 @@ void main() {
   const api = {
     renderer, camera, room, virt, ready,
     onFrame(cb) { frameCbs.add(cb); return () => frameCbs.delete(cb); },
-    pick, project, tween, rayPlane,
+    pick, pickHolo, project, tween, rayPlane,
     /** 画面の左右のパネルを避けて、胸部模型が空いている所の中央に来るよう投影をずらす（px） */
     setViewShift(px, py = 0) { viewShift.x = px; viewShift.y = py; resize(); },
     markerSurface: (i) => markerSurf[i],

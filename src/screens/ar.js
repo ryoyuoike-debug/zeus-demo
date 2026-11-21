@@ -6,6 +6,7 @@
 //   S7c 表示の操作       … プリセット / 透過度（臓器ごと）/ 3D表示 ON・OFF / 関心領域・ライン（なし・あり）
 //                          サイドボタン: 利き手・掴み・ロック・同期
 //   S7d 映像共有         … ミラーリング（手術室モニター / iPad）の子画面
+//                          【区分要確認】のため研究開発機能の扱い（「研究開発機能を表示」ON のときだけ・バッジ付き）
 // 背景はパススルー映像に見立てた処置室と胸部模型（すべて手続き的に生成した合成データ）。
 // =============================================================================
 import '../styles/screens/ar.css';
@@ -27,9 +28,13 @@ const GRAB_OPTS = [
 const POINT_NO = ['①', '②', '③'];
 
 // 画面を離れても保持する小さな状態（デモのリセットで初期化）
-const memory = { deleted: new Set() };
+//   deleted    … グラスから削除した患者データ
+//   loadedCase … グラスで読み込んだ患者データ（作業中の症例 state.caseId とは別に持つ）
+const memory = { deleted: new Set(), loadedCase: null };
 subscribe((_s, patch) => {
   if ('registered' in patch && 'roi' in patch && 'line' in patch) memory.deleted.clear();
+  // デモのリセット・作業中の症例の切り替え（selectCase）では位置合わせが解除されるので、読み込んだ症例も忘れる
+  if ('caseId' in patch && 'registered' in patch) memory.loadedCase = null;
 });
 
 const abortError = () => new DOMException('aborted', 'AbortError');
@@ -52,7 +57,6 @@ function noiseUrl() {
   noiseCache = c.toDataURL('image/png');
   return noiseCache;
 }
-const fmtTime = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 export default {
   id: 'ar',
@@ -100,8 +104,6 @@ export default {
       roiOn: true,
       mirrorOn: false,
       mirrorDev: 'monitor',
-      rec: false,
-      recT0: 0,
       toast: null,
     };
     const reg = { idx: 0, mode: 'hold', hold: 0, placed: [null, null, null], confirmed: [false, false, false], auto: false, autoAbort: null, matrix: null };
@@ -150,7 +152,8 @@ export default {
     const statusDot = h('i', { class: 'ar-status-dot' });
     const status = h('div', { class: 'ar-status', role: 'status', 'aria-live': 'polite' }, statusDot, statusText);
     const toastEl = h('div', { class: 'ar-toast' });
-    const mirrorBtn = h('button', { class: 'ar-tool', type: 'button', title: '手術室モニター・iPad へのミラーリング', onclick: () => setMirror(!ui.mirrorOn) }, icon('cast'), h('span', {}, 'ミラーリング'));
+    // 映像共有（ミラーリング）は【区分要確認】→ 研究開発機能として、研究モードのときだけバッジ付きで表示
+    const mirrorBtn = h('button', { class: 'ar-tool ar-tool-research', type: 'button', title: '手術室モニター・iPad へのミラーリング（研究開発中・未承認）', onclick: () => setMirror(!ui.mirrorOn) }, icon('cast'), h('span', {}, 'ミラーリング'), researchBadge());
     const recenterBtn = h('button', { class: 'ar-tool ar-tool-icon', type: 'button', title: '視点を戻す', onclick: () => scene.look.reset() }, icon('recenter'));
     const topbar = h('div', { class: 'ar-top' }, h('div', { class: 'ar-top-c' }, status, toastEl), h('div', { class: 'ar-top-r' }, recenterBtn, mirrorBtn));
     const hint = h('div', { class: 'ar-hint' }, 'ドラッグ：見回す　ホイール：近づく　ダブルクリック：視点を戻す');
@@ -244,14 +247,12 @@ export default {
     const pipSeg = h('div', { class: 'qseg qseg-dark' },
       h('button', { type: 'button', 'data-v': 'monitor', onclick: () => { ui.mirrorDev = 'monitor'; render(); sizePip(); } }, icon('monitor'), '手術室モニター'),
       h('button', { type: 'button', 'data-v': 'ipad', onclick: () => { ui.mirrorDev = 'ipad'; render(); sizePip(); } }, icon('tablet'), 'iPad'));
-    const recTime = h('span', { class: 'ar-rec-time' }, '00:00');
-    const recBtn = h('button', { class: 'ar-rec', type: 'button', 'aria-pressed': 'false', onclick: () => setRec(!ui.rec) }, h('i'), 'REC', recTime);
-    const pipScreen = h('div', { class: 'ar-pip-screen' }, pipCanvas, h('div', { class: 'ar-pip-badge' }, 'ミラーリング中'), h('div', { class: 'ar-pip-rec' }, h('i'), 'REC'));
+    const pipScreen = h('div', { class: 'ar-pip-screen' }, pipCanvas, h('div', { class: 'ar-pip-badge' }, 'ミラーリング中'));
     const pip = h('section', { class: 'ar-pip', hidden: true, 'aria-label': 'ミラーリング' },
       h('div', { class: 'ar-pip-head' }, h('b', {}, 'ミラーリング'), researchBadge()),
       pipSeg,
       h('div', { class: 'ar-pip-device' }, pipScreen),
-      h('div', { class: 'ar-pip-foot' }, recBtn, h('span', { class: 'ar-pip-note' }, 'グラスを着けていない医師も同じ映像を確認できます')));
+      h('p', { class: 'ar-pip-note' }, 'グラスを着けていない医師も同じ映像を確認できます'));
 
     // ---- 読み込み中 ----
     const loader = h('div', { class: 'ar-loader' }, h('span', { class: 'ar-spin' }), h('span', {}, '空間を認識しています…'));
@@ -280,9 +281,9 @@ export default {
         render();
       }, 60);
       if (state.registered) {
-        // すでに位置合わせ済み → 表示メニューから
-        ui.loadedCase = state.caseId;
-        ui.selectedCase = state.caseId;
+        // すでに位置合わせ済み → 表示メニューから（グラスで読み込んだ症例を復元）
+        ui.loadedCase = memory.loadedCase || state.caseId;
+        ui.selectedCase = ui.loadedCase;
         ui.locked = true;
         scene.holo.setOps(PRESETS[0].op);
         scene.holo.alignNow(null);
@@ -290,13 +291,21 @@ export default {
         syncSlider();
       } else {
         ui.phase = 'start';
+        // 読み込み済み（位置合わせ前）の症例があれば、浮かんだ状態で復元
+        if (memory.loadedCase) {
+          ui.loadedCase = memory.loadedCase;
+          ui.selectedCase = memory.loadedCase;
+          scene.holo.setOps(PRESETS[0].op);
+          scene.holo.appear();
+        }
       }
       root.classList.add('is-ready');
       render();
       layoutShift();
     }).catch((e) => { if (!signal.aborted) console.error(e); });
 
-    const roiApplies = () => ui.loadedCase === state.caseId;
+    // 関心領域・ラインは、描いた症例（state.roiCaseId）を読み込んでいるときだけ重ねる
+    const roiApplies = () => !!ui.loadedCase && ui.loadedCase === state.roiCaseId;
 
     // -------------------------------------------------------------------------
     // 描画（状態 → DOM）
@@ -330,7 +339,7 @@ export default {
       for (const c of list) {
         const sel = ui.selectedCase === c.id;
         const loading = ui.loadingCase === c.id;
-        const hasRoi = c.id === state.caseId && (state.roi.length > 0 || !!state.line.end);
+        const hasRoi = c.id === state.roiCaseId && (state.roi.length > 0 || !!state.line.end);
         listBody.appendChild(h('button', {
           class: 'ar-li' + (sel ? ' is-on' : ''), type: 'button', role: 'option', 'aria-selected': sel ? 'true' : 'false', 'data-id': c.id,
           onclick: () => selectCase(c.id),
@@ -360,6 +369,7 @@ export default {
       root.dataset.phase = ui.phase;
       root.classList.toggle('is-lefty', ui.hand === 'left');
       root.classList.toggle('is-tour', !!state.tourActive);
+      root.classList.toggle('is-research', !!state.researchMode);
 
       // S7a
       const showStart = ui.phase === 'start';
@@ -444,13 +454,12 @@ export default {
       show3dBtn.classList.toggle('is-off', !ui.show3d);
       show3dBtn.querySelector('.ar-switch-val').textContent = ui.show3d ? 'ON' : 'OFF';
 
-      // S7d
-      pip.hidden = !ui.mirrorOn;
+      // S7d（研究開発機能: 研究モードのときだけ）
+      mirrorBtn.hidden = !state.researchMode;
+      pip.hidden = !(ui.mirrorOn && state.researchMode);
       mirrorBtn.classList.toggle('is-on', ui.mirrorOn);
       pip.dataset.dev = ui.mirrorDev;
       for (const b of pipSeg.children) b.classList.toggle('is-on', b.dataset.v === ui.mirrorDev);
-      recBtn.setAttribute('aria-pressed', ui.rec ? 'true' : 'false');
-      pip.classList.toggle('is-rec', ui.rec);
       hint.hidden = ui.phase === 'loading';
       hint.textContent = ui.phase === 'register'
         ? 'クリック：球を置く　ドラッグ：見回す'
@@ -493,6 +502,7 @@ export default {
       ui.loadingCase = id;
       if (ui.loadedCase) scene.holo.hideNow();
       ui.loadedCase = null;
+      memory.loadedCase = null;
       reg.matrix = null;
       setState({ registered: false });
       render();
@@ -501,6 +511,7 @@ export default {
         if (signal.aborted || ui.loadingCase !== id) return;
         ui.loadingCase = null;
         ui.loadedCase = id;
+        memory.loadedCase = id;
         ui.preset = 'thorax';
         scene.holo.setOps(PRESETS[0].op);
         scene.holo.appear();
@@ -522,6 +533,7 @@ export default {
         scene.holo.hideNow();
         ui.loadedCase = null;
         ui.loadingCase = null;
+        memory.loadedCase = null;
         setState({ registered: false });
       }
       ui.selectedCase = null;
@@ -756,16 +768,9 @@ export default {
       if (pipCanvas.width !== w) { pipCanvas.width = w; pipCanvas.height = hh; }
     }
     function setMirror(v) {
-      ui.mirrorOn = v;
-      if (!v) setRec(false);
+      ui.mirrorOn = v && state.researchMode;
       sizePip();
-      scene.setMirror(v ? pipCanvas : null);
-      render();
-    }
-    function setRec(v) {
-      ui.rec = v;
-      ui.recT0 = performance.now();
-      recTime.textContent = '00:00';
+      scene.setMirror(ui.mirrorOn ? pipCanvas : null);
       render();
     }
 
@@ -800,7 +805,8 @@ export default {
     on(stage, 'pointerdown', (e) => {
       if (e.button !== 0) return;
       const d = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lx: e.clientX, ly: e.clientY, drag: false, mode: 'look' };
-      if (ui.phase === 'view' && !ui.locked && ui.grab !== 'none' && scene.pick(e.clientX, e.clientY)) {
+      // 掴み: 表示されている 3D モデルに当たったときだけ（動かした後のモデルも掴めるよう、胸部模型ではなくモデルで判定）
+      if (ui.phase === 'view' && !ui.locked && ui.grab !== 'none' && scene.pickHolo(e.clientX, e.clientY)) {
         const g = scene.holo.getGrab();
         const planeY = 960;
         const p0 = scene.rayPlane(e.clientX, e.clientY, planeY);
@@ -847,7 +853,6 @@ export default {
       const r = c.getBoundingClientRect();
       return { x: r.left + 4, y: r.top + 4 };
     };
-    let lastRecSec = -1;
     scene.onFrame((dt, now) => {
       const sr = stage.getBoundingClientRect();
       // ---- 手（位置合わせ中・手動） ----
@@ -936,16 +941,12 @@ export default {
       const tf = ox || oy ? `translate3d(${ox}px, ${oy}px, 0)` : '';
       if (hud.style.transform !== tf) hud.style.transform = tf;
       recenterBtn.classList.toggle('is-visible', !scene.look.isDefault());
-
-      // ---- REC の経過時間 ----
-      if (ui.rec) {
-        const s = Math.floor((now - ui.recT0) / 1000);
-        if (s !== lastRecSec) { lastRecSec = s; recTime.textContent = fmtTime(s); }
-      }
     });
 
     const unsub = subscribe((s, patch) => {
-      if ('tourActive' in patch) render();
+      // 研究モードを OFF にしたら、ミラーリング（研究開発機能）も止める
+      if ('researchMode' in patch && !s.researchMode && ui.mirrorOn) setMirror(false);
+      else if ('tourActive' in patch || 'researchMode' in patch) render();
     });
     on(window, 'resize', () => layoutShift());
 
@@ -966,6 +967,7 @@ export default {
       Object.assign(ui, { phase: 'start', listOpen: false, loadedCase: null, loadingCase: null, selectedCase: null, confirm: null, locked: false, hand: 'right', grab: 'none', grabMenu: false, preset: 'thorax', opTarget: 'lung', show3d: true, roiOn: true });
       setMirror(false);
       memory.deleted.clear();
+      memory.loadedCase = null;
       setState({ registered: false });
       render();
       layoutShift();
@@ -1046,13 +1048,14 @@ export default {
       t.caption('3D表示は、いつでも ON に戻せます。');
       await t.click(show3dBtn);
       await t.sleep(700);
-      t.caption('手術室モニターや iPad へのミラーリングで、グラスを着けていない医師とも同じ映像を共有できます。');
-      await t.click(mirrorBtn);
-      await t.sleep(1100);
-      await t.click(recBtn);
-      await t.sleep(900);
-      await t.click(pipSeg.querySelector('[data-v="ipad"]'));
-      await t.sleep(1500);
+      // 映像共有（ミラーリング）は研究開発機能（【区分要確認】）なので、研究モードのときだけ案内する
+      if (state.researchMode) {
+        t.caption('研究開発中・未承認の映像共有（ミラーリング）：手術室モニターや iPad に、グラスと同じ映像を映せます。');
+        await t.click(mirrorBtn);
+        await t.sleep(1400);
+        await t.click(pipSeg.querySelector('[data-v="ipad"]'));
+        await t.sleep(1500);
+      }
     }
 
     return {

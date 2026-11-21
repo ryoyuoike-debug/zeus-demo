@@ -301,7 +301,9 @@
 }
 @media (max-width: 900px) {
   .tf-toolbar { flex-wrap: wrap; }
-  .tf-case { order: 3; width: 100%; }
+  .tf-case { order: 3; width: 100%; flex-wrap: wrap; white-space: normal; row-gap: 2px; }
+  .tf-case > span { overflow: visible; }
+  .tf-hide-narrow { display: none; }
   .tf-content { grid-template-columns: 1fr; }
   .tf-table-wrap { max-height: 220px; }
   .tf-pkg { overflow: visible; }

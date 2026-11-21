@@ -185,6 +185,14 @@
 
 /* ---- レスポンシブ ---- */
 @media (max-width: 1180px) {
+  /* 見出しは切らずに折り返す。日付と時刻は 2 行に分けて、患者 ID が切れないようにする */
+  .home-sec-head { flex-wrap: wrap; row-gap: 4px; }
+  .home-sec-head h2 { overflow: visible; }
+  .home-table col.c-date { width: 31%; }
+  .home-table col.c-id { width: 33%; }
+  .home-table th, .home-table td { padding-left: 6px; padding-right: 6px; }
+  .home-table td.home-date { white-space: normal; line-height: 1.35; }
+  .home-time { display: block; }
   .home-grid { grid-template-columns: minmax(230px, 0.8fr) 16px minmax(0, 1fr) 16px minmax(0, 1fr); }
   .home-arrow { width: 16px; height: 16px; }
   .home-arrow svg { width: 9px; height: 9px; }

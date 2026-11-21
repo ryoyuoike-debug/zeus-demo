@@ -5,38 +5,38 @@
 // =============================================================================
 import '../styles/screens/home.css';
 import { h, dialog, toast } from '../ui/dom.js';
-import { state, setState, subscribe, navigate } from '../app/state.js';
+import { state, subscribe, navigate, selectCase } from '../app/state.js';
 import { CASES, studyDateTime, DEVICES } from '../data/cases.js';
 import { showSettings } from '../ui/appDialogs.js';
-import { session } from './import/session.js';
+import { session, DEFAULT_NEW } from './import/session.js';
 import { HOME_IMPORT_ILLUS, PLUS_ICON, TRASH_ICON, CHEVRON_ICON } from './import/visuals.js';
 
-/** 3D構成が終わると「新規」として追加される症例（直接 URL で開いた場合の既定） */
-const DEFAULT_NEW = 'DEMO-0001';
 const byNewest = (a, b) => studyDateTime(b).localeCompare(studyDateTime(a));
 
+/** 最後に取り込んだ症例（3D構成が終わっていれば。直接 URL で開いた場合は DEMO-0001） */
 function newCaseId() {
-  return state.reconstructed ? (session.importedCaseId || DEFAULT_NEW) : null;
+  const id = session.importedCaseId || DEFAULT_NEW;
+  return session.newCases.get(id) ? id : null;
 }
-/** リストに並ぶ症例（既存の例 + 3D構成が終わった新規症例） */
+/** リストに並ぶ症例（既存の例 + 3D構成が終わった新規症例。取り込んで 3D構成がまだの症例は載せない） */
 function baseRows() {
-  const newId = newCaseId();
-  const rows = CASES.filter((c) => c.id !== DEFAULT_NEW && c.id !== newId);
-  if (newId) rows.push(CASES.find((c) => c.id === newId));
-  return rows.sort(byNewest);
+  return CASES.filter((c) => !session.newCases.has(c.id) || session.newCases.get(c.id)).sort(byNewest);
 }
-/** 症例ごとの進み具合（選択中の症例は共有状態、それ以外の既存例は「3D構成済み」） */
+/** 症例ごとの進み具合（作業中の症例は共有状態、それ以外は「3D構成済み」のみ。関心領域は描いた症例だけ） */
 function caseStatus(id) {
-  if (id === state.caseId && (state.reconstructed || id === DEFAULT_NEW)) {
+  const roi = id === state.roiCaseId && (state.roi.length > 0 || !!state.line.end);
+  if (id === state.caseId && state.reconstructed) {
     return {
-      recon: state.reconstructed,
+      recon: true,
       marker: state.markersConfirmed,
-      roi: state.roi.length > 0 || !!state.line.end,
+      roi,
       transfer: Object.values(state.transferred).some(Boolean),
     };
   }
-  return { recon: true, marker: false, roi: false, transfer: false };
+  return { recon: true, marker: false, roi, transfer: false };
 }
+/** 新規症例のマーカ確認がまだか（「新規」バッジ・お知らせを出すか） */
+const newPending = (id) => !!id && !(id === state.caseId && state.markersConfirmed);
 /** 次に進むべきセクション番号 */
 function nextSection() {
   if (!state.reconstructed) return 1;
@@ -134,7 +134,7 @@ export default {
               h('div', { class: 'small faint' }, state.reconstructed ? '削除した行は「↺ はじめから」で元に戻ります。' : '［新規データ追加］から取り込むと、ここに追加されます。')))));
         }
         for (const c of list) {
-          const isNew = c.id === newId && !state.markersConfirmed;
+          const isNew = c.id === newId && newPending(newId);
           const tr = h('tr', {
             class: 'is-selectable' + (c.id === selected ? ' is-selected' : '') + (c.id === enteringId ? ' is-new is-entering' : ''),
             tabindex: 0,
@@ -144,7 +144,7 @@ export default {
             ondblclick: () => { select(c.id); open(); },
             onkeydown: (e) => onRowKey(e, c.id),
           },
-          h('td', { class: 'mono' }, studyDateTime(c)),
+          h('td', { class: 'mono home-date', title: studyDateTime(c) }, c.studyDate, ' ', h('span', { class: 'home-time' }, c.studyTime)),
           h('td', { class: 'mono' }, c.id),
           h('td', {}, h('span', { class: 'home-name' }, c.name, isNew ? h('span', { class: 'badge badge-warn home-new-badge' }, '新規') : null)));
           tbody.appendChild(tr);
@@ -199,7 +199,8 @@ export default {
       }
       function open() {
         if (!selected) return;
-        setState({ caseId: selected });
+        // 別の症例を開くときは、その症例用に進捗をリセットする（リスト 2・3 の症例は 3D構成済み）
+        if (selected !== state.caseId) selectCase(selected, { reconstructed: true });
         navigate(target);
       }
       async function remove() {
@@ -279,13 +280,13 @@ export default {
         later(() => {
           lists.marker.render({ enteringId: newId });
           const c = CASES.find((x) => x.id === newId);
-          if (!state.markersConfirmed) lists.marker.setNotice(`${c.id} の3D構成が完了し、リスト2に追加されました`);
+          if (newPending(newId)) lists.marker.setNotice(`${c.id} の3D構成が完了し、リスト2に追加されました`);
         }, 500);
         later(() => lists.transfer.render({ enteringId: newId }), 750);
       } else {
         for (const l of Object.values(lists)) l.render();
         const c = newId && CASES.find((x) => x.id === newId);
-        if (c && !state.markersConfirmed) lists.marker.setNotice(`${c.id} の3D構成が完了しました`);
+        lists.marker.setNotice(c && newPending(newId) ? `${c.id} の3D構成が完了しました` : '');
       }
       applyNext();
     }

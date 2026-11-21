@@ -119,6 +119,13 @@
 .ar-tool:hover, .ar-tool.is-hover { box-shadow: 0 0 0 2px rgba(47, 139, 255, 0.85); }
 .ar-tool.is-on { background: var(--q-blue); border-color: var(--q-blue); }
 .ar-tool-icon { width: 34px; padding: 0; justify-content: center; opacity: 0; pointer-events: none; }
+/* 研究開発機能（ミラーリング）のボタン: 研究開発中・未承認バッジ付き */
+.ar-tool-research { padding-right: 7px; }
+.ar-tool-research .badge { height: 18px; padding: 0 6px; font-size: 10px; background: rgba(40, 6, 22, 0.75); }
+/* バッジぶん右上のボタンが広くなるので、中央のステータスの幅を控えめに */
+@media (min-width: 901px) {
+  .ar-root.is-research .ar-top-c { max-width: calc(100% - 540px); }
+}
 .ar-tool-icon.is-visible { opacity: 1; pointer-events: auto; }
 .ar-ic { display: inline-grid; place-items: center; flex: none; line-height: 0; }
 .ar-ic-ok { color: var(--green); }
@@ -356,22 +363,7 @@
 .ar-pip[data-dev="ipad"] .ar-pip-screen { width: 76%; aspect-ratio: 4 / 3; border: 9px solid #23262b; border-radius: 16px; }
 .ar-pip-canvas { display: block; width: 100%; height: 100%; }
 .ar-pip-badge { position: absolute; left: 6px; top: 6px; font-size: 9.5px; font-weight: 800; color: #fff; background: rgba(47, 139, 255, 0.85); padding: 1px 6px; border-radius: 5px; }
-.ar-pip-rec { position: absolute; right: 6px; top: 6px; display: none; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 900; color: #fff; background: rgba(229, 72, 77, 0.9); padding: 1px 6px; border-radius: 5px; }
-.ar-pip-rec i, .ar-rec i { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
-.ar-pip.is-rec .ar-pip-rec { display: inline-flex; }
-.ar-pip.is-rec .ar-pip-rec i { animation: arBlink 1s steps(2) infinite; }
-.ar-pip-foot { display: flex; align-items: center; gap: 8px; }
-.ar-pip-note { font-size: 10.5px; color: #b9c8db; line-height: 1.4; }
-.ar-rec {
-  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; flex: none;
-  border-radius: 9px; border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 11.5px; font-weight: 900; cursor: pointer;
-}
-.ar-rec:hover, .ar-rec.is-hover { box-shadow: 0 0 0 2px rgba(47, 139, 255, 0.85); }
-.ar-rec i { background: #ff5a5f; }
-.ar-rec[aria-pressed="true"] { background: rgba(229, 72, 77, 0.28); border-color: #e5484d; }
-.ar-rec[aria-pressed="true"] i { animation: arBlink 1s steps(2) infinite; }
-.ar-rec-time { font-family: var(--mono); font-weight: 700; opacity: 0.85; }
+.ar-pip-note { margin: 0; font-size: 10px; color: #b9c8db; line-height: 1.4; }
 .ar-pip .qseg button { height: 28px; font-size: 11.5px; }
 
 /* ---------- 小さめの画面（1280×720 など） ---------- */

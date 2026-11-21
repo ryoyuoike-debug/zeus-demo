@@ -51,7 +51,7 @@ function isDone(id) {
     case 'import': return state.imported;
     case 'reconstruct': return state.reconstructed;
     case 'marker': return state.markersConfirmed;
-    case 'roi': return state.roi.length > 0 || !!state.line.end;
+    case 'roi': return state.roiCaseId === state.caseId && (state.roi.length > 0 || !!state.line.end);
     case 'transfer': return Object.values(state.transferred).some(Boolean);
     case 'ar': return state.registered;
     default: return false;

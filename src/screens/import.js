@@ -4,7 +4,7 @@
 // =============================================================================
 import '../styles/screens/import.css';
 import { h, toast } from '../ui/dom.js';
-import { state, setState, navigate } from '../app/state.js';
+import { state, setState, navigate, selectCase } from '../app/state.js';
 import { CASES, studyDateTime } from '../data/cases.js';
 import { createGateway } from './import/gateway.js';
 import { createCdImport } from './import/cdrom.js';
@@ -103,7 +103,7 @@ export default {
           fact('必要なシリーズ', '縦隔条件・肺野条件（各 1 シリーズ）'),
           fact('DICOM取込と3D化', '目安 約8分（この間は席を離れられます）'),
           fact('このデモでは', '処理時間を数秒に短縮しています')),
-        state.imported ? h('p', { class: 'imp-prev small faint' }, `取込済み: ${(CASES.find((c) => c.id === state.caseId) || CASES[0]).id}（体位: ${POS_LABEL[state.position] || '仰臥位'}）。もう一度取り込むこともできます。`) : null);
+        state.imported ? h('p', { class: 'imp-prev small faint' }, `取込済み: ${(CASES.find((c) => c.id === (session.importedCaseId || state.caseId)) || CASES[0]).id}（体位: ${POS_LABEL[state.position] || '仰臥位'}）。もう一度取り込むこともできます。`) : null);
     }
     const fact = (k, v) => h('div', { class: 'imp-fact' }, h('span', { class: 'imp-fact-k' }, k), h('span', { class: 'imp-fact-v' }, v));
 
@@ -146,7 +146,12 @@ export default {
       session.importedCaseId = c.id;
       session.importedFrom = from;
       session.announcedFor = null;
-      setState({ caseId: c.id });
+      session.newCases.set(c.id, false);
+      // 一覧から削除していた症例でも、取り込み直したら 3D構成後に再びリストへ追加する
+      session.removed.marker.delete(c.id);
+      session.removed.transfer.delete(c.id);
+      // 新しく取り込んだデータなので、同じ症例 ID でも 3D構成からやり直す（前の症例の進捗は持ち越さない）
+      selectCase(c.id, { reconstructed: false, force: true });
       toast(`${c.id} のデータを取り込みました`, { kind: 'success' });
       go('position');
     }

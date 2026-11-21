@@ -34,8 +34,6 @@ const memory = {
   sent: new Map(),
   /** リストで選んでいる症例 */
   selected: null,
-  /** 関心領域・2点ラインを設定した症例（最初にこの画面を開いたときの作業中の症例） */
-  roiCase: null,
 };
 const RESET_KEYS = ['imported', 'reconstructed', 'markersConfirmed', 'roi', 'line', 'transferred', 'registered'];
 subscribe((_s, patch) => {
@@ -44,7 +42,12 @@ subscribe((_s, patch) => {
     memory.linked = null;
     memory.sent.clear();
     memory.selected = null;
-    memory.roiCase = null;
+  }
+  // 作業中の症例の切り替え（selectCase）では転送状況が {} に戻るので、転送済みの記録とリストの選択も破棄する
+  // （USB の接続状況はそのまま。転送画面の［転送］で症例を変えたときは transferred を含まないので対象外）
+  if ('caseId' in patch && 'transferred' in patch) {
+    memory.sent.clear();
+    memory.selected = null;
   }
 });
 
@@ -66,9 +69,10 @@ export default {
 
     // 直接 URL で開いた場合は、取込と 3D 構成が終わっているものとみなす
     if (!state.imported || !state.reconstructed) setState({ imported: true, reconstructed: true });
-    if (memory.roiCase == null) memory.roiCase = state.caseId;
-    // state.transferred が既にある（他の画面から設定された）場合は、作業中の症例の転送済みとして扱う
-    for (const [id, v] of Object.entries(state.transferred)) if (v) sentFor(state.caseId).add(id);
+    // この画面での転送の記録がまだなく、state.transferred だけがある（直接 URL で AR 表示を開いたなど）場合は、
+    // 作業中の症例の転送済みとして扱う（transferred は症例ごとではないので、記録がある場合は使わない）
+    const recorded = [...memory.sent.values()].some((set) => set.size > 0);
+    if (!recorded) for (const [id, v] of Object.entries(state.transferred)) if (v) sentFor(state.caseId).add(id);
 
     // ---------------------------------------------------------------------
     // 小さなユーティリティ（すべて signal で中断できる）
@@ -303,7 +307,7 @@ export default {
       // 送信内容
       itModel.val.textContent = `${STRUCTURES.length}構造`;
       itModel.sub.textContent = '端末用に軽量化・変換済み';
-      const isWork = c.id === memory.roiCase;
+      const isWork = c.id === state.roiCaseId;
       const hasRoi = isWork && state.roi.length > 0;
       const hasLine = isWork && !!state.line?.end;
       itRoi.el.classList.toggle('is-off', !hasRoi);
@@ -454,7 +458,8 @@ export default {
       if (!ids.length || busy || scanning) return;
       busy = true;
       const caseId = selectedId;
-      if (state.caseId !== caseId) setState({ caseId });
+      // 作業中の症例を切り替える（関心領域・ラインは roiCaseId で描いた症例を区別する。マーカの置き直し位置は前の症例のものなので破棄）
+      if (state.caseId !== caseId) setState({ caseId, markerPositions: null });
       const set = sentFor(caseId);
       for (const id of ids) { set.delete(id); dev[id].sending = true; dev[id].progress = 0; }
       renderRows();
@@ -494,7 +499,7 @@ export default {
     // 状態の変化（ほかの画面・リセット）に追従
     const unsub = subscribe((_s, patch) => {
       if (busy) return;
-      if ('roi' in patch || 'line' in patch || 'transferred' in patch || 'caseId' in patch) render();
+      if ('roi' in patch || 'line' in patch || 'roiCaseId' in patch || 'transferred' in patch || 'caseId' in patch) render();
     });
 
     renderRows();
